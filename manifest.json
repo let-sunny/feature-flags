@@ -1,6 +1,8 @@
 {
-  "name": "Figma Plugin Boilerplate",
+  "name": "feature-flags",
+  "id": "1060555268166221818",
   "api": "1.0.0",
   "main": "dist/code.js",
-  "ui": "dist/ui.html"
+  "ui": "dist/ui.html",
+  "editorType": ["figma"]
 }
