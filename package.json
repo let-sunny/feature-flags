@@ -1,7 +1,7 @@
 {
-  "name": "figma_plugin_boilerplate",
+  "name": "feature-flags",
   "version": "1.0.0",
-  "description": "My Figma plugin",
+  "description": "figma plugin for feature flags",
   "main": "code.js",
   "scripts": {
     "run": "npx webpack --mode=development --watch",
@@ -9,8 +9,11 @@
     "test": "jest",
     "prepare": "husky install"
   },
-  "author": "",
-  "license": "",
+  "author": {
+    "name": "Minseon Kim",
+    "email": "sunny.dev.js@gmail.com"
+  },
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.16.7",
     "@babel/preset-env": "^7.16.7",
