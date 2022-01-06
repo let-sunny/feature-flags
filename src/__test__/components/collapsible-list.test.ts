@@ -5,7 +5,7 @@ import { fireEvent } from '@testing-library/dom';
 import '../../components/collapsible-list';
 
 const ELEMENT_NAME = 'feature-flags-list';
-describe('feature-flags-list', () => {
+describe(ELEMENT_NAME, () => {
   test('should have defined', () => {
     expect(customElements.get(ELEMENT_NAME)).toBeDefined();
   });

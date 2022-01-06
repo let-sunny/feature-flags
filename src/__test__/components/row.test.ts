@@ -4,7 +4,7 @@
 import '../../components/row';
 
 const ELEMENT_NAME = 'feature-flags-row';
-describe('feature-flags-row', () => {
+describe(ELEMENT_NAME, () => {
   test('should have defined', () => {
     expect(customElements.get(ELEMENT_NAME)).toBeDefined();
   });

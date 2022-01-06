@@ -14,7 +14,6 @@ class CollapsibleList extends HTMLElement {
   }
 
   clickHandler(e: MouseEvent) {
-    e.stopPropagation();
     const target = e.composedPath()[0] as HTMLElement;
     if (target.getAttribute('id') === 'header') {
       target.parentElement?.classList.toggle('closed');
