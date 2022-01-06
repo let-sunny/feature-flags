@@ -1,5 +1,36 @@
-body {
-  font: 12px sans-serif;
-  text-align: center;
-  margin: 20px;
+:root {
+  font-size: 12px;
+  --black: #242424;
+  --gray: #c4c4c4;
+  --key-color: #d2e6f5;
+  --sub-color: #e9f2f9;
+  --white: #ffffff;
+  --icon-size: 14px;
+}
+
+body,
+p {
+  margin: 0;
+  padding: 0;
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 100%;
+}
+
+#ui #footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+button#create {
+  width: 100%;
+  background-color: #54afe3;
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: bold;
+  height: 40px;
+  border: none;
 }

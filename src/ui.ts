@@ -1,8 +1,8 @@
 import '@webcomponents/custom-elements/src/native-shim';
 import '@webcomponents/custom-elements/custom-elements.min';
 
-import './components';
 import './ui.css';
+import './components';
 
 document.addEventListener('contextmenu', (e) => {
   const target = e

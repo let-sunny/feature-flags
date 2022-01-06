@@ -1,6 +1,21 @@
 <!-- id가 있어야함 -->
 <section id="ui">
-  <feature-flags-row id="test-row" name="test" key="1234"></feature-flags-row>
-  <feature-flags-list id="test-list" name="test"></feature-flags-list>
-  <feature-flags-context-menu></feature-flags-context-menu>
+  <article id="content">
+    <feature-flags-row id="test-row" name="test" key="1234"></feature-flags-row>
+    <feature-flags-row
+      id="test-row2"
+      name="test"
+      key="1234"
+      visible
+      editable
+      type="node"
+      node-type="image"
+    ></feature-flags-row>
+
+    <feature-flags-list id="test-list" name="test"></feature-flags-list>
+    <feature-flags-context-menu></feature-flags-context-menu>
+  </article>
+  <footer id="footer">
+    <button type="button" id="create">Make Feature</button>
+  </footer>
 </section>

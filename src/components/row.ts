@@ -1,3 +1,5 @@
+import Icon from '../static/Icon';
+
 type RowAttributeKey =
   | 'type'
   | 'key'
@@ -95,9 +97,9 @@ function addRowTemplate(elem: HTMLElement) {
   content.setAttribute('id', 'content');
   // feature doesn't have icon
   if (type !== 'feature') {
-    const icon = document.createElement('img');
+    const icon = document.createElement('div');
     icon.setAttribute('id', 'icon');
-    icon.setAttribute('class', elem.getAttribute('node-type') || '');
+    icon.innerHTML = Icon[elem.getAttribute('node-type') || '']();
     content.appendChild(icon);
   }
   const name = document.createElement('p');
@@ -111,8 +113,12 @@ function addRowTemplate(elem: HTMLElement) {
     // add controls
     const controls = document.createElement('div');
     controls.setAttribute('id', 'controls');
-    const toggle = document.createElement('button');
+    const toggle = document.createElement('div');
     toggle.setAttribute('id', 'toggle');
+    toggle.innerHTML = `
+      <div id="visible">${Icon.visible()}</div>
+      <div id="invisible">${Icon.invisible()}</div>
+    `;
     controls.appendChild(toggle);
     container.appendChild(controls);
   }
@@ -128,13 +134,15 @@ function addRowStyle(elem: HTMLElement) {
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
-          padding: 5px;
+          padding: 12px 0;
       }
-      #container:hover {
-          background-color: #f5f5f5;
+      #container > *, #container .icon {
+        color: var(--gray) !important;
+        fill: var(--gray) !important;
       }
-      #container:active {
-          background-color: #eaeaea;
+      #container.editable > *, #container.editable .icon {
+        color: var(--black) !important;
+        fill: var(--black) !important;
       }
 
       #content, #controls {
@@ -147,14 +155,36 @@ function addRowStyle(elem: HTMLElement) {
       }
 
       #name {
-          font-size: 14px;
+          font-size: 1rem;
           margin: 0;
       }
 
       #icon {
-          width: 16px;
-          height: 16px;
-          background-color: red;
+          width: var(--icon-size, 1rem);
+          height: var(--icon-size, 1rem);
+          padding-right: 8px;
+      }
+
+      #toggle {
+        display: flex;
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        width: var(--icon-size, 1rem);
+        height: var(--icon-size, 1rem);
+      }
+      #toggle #visible {
+        display: none;
+      }
+      #toggle #invisible {
+        display: block;
+      }
+      #toggle.visible #visible {
+        display: block;
+      }
+      #toggle.visible #invisible {
+        display: none;
       }
     `;
 }

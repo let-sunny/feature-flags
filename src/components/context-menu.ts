@@ -1,3 +1,4 @@
+import Icon from '../static/Icon';
 type ContextMenuAttributeKey = 'for' | 'x' | 'y';
 
 class ContextMenu extends HTMLElement {
@@ -68,13 +69,13 @@ function addMenuTemplate(elem: ContextMenu) {
   const rename = document.createElement('li');
   rename.setAttribute('class', 'menu-item');
   rename.setAttribute('id', 'rename');
-  rename.innerHTML = '<p id="rename">Rename</p><p>R</p>';
+  rename.innerHTML = '<p id="rename">Rename</p><p id="short-cut">R</p>';
   menu.appendChild(rename);
 
   const del = document.createElement('li');
   del.setAttribute('class', 'menu-item');
   del.setAttribute('id', 'delete');
-  del.innerHTML = '<p id="delete">Delete</p><p>D</p>';
+  del.innerHTML = `<p id="delete">Delete</p><i id="icon">${Icon.delete()}</i>`;
   menu.appendChild(del);
 
   container.appendChild(menu);
@@ -86,7 +87,9 @@ function addMenuStyle(elem: ContextMenu) {
   style.innerHTML = `
     #container {
       position: absolute;
-      background-color: #eee;
+      background: #1D1D1D;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
     }
     #container.hidden {
       display: none;
@@ -99,7 +102,8 @@ function addMenuStyle(elem: ContextMenu) {
       margin: 0;
       padding: 0;
 
-      width: 130px;
+      width: 140px;
+      padding: 12px 0;
     }
 
     #menu .menu-item {
@@ -107,15 +111,32 @@ function addMenuStyle(elem: ContextMenu) {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      padding: 2px;
+      padding: 8px 16px 4px;
+    }
+
+    #menu .menu-item #short-cut {
+      color: var(--gray);
+      padding-right: 2px;
+      font-size: 10px;
+      font-weight: 400;
+    }
+    #menu .menu-item #icon {
+      width: 12px;
+      height: 12px;
+    }
+    #menu .menu-item #icon .icon {
+      stroke: var(--gray);
     }
 
     #menu .menu-item:hover {
-      background-color: #f5f5f5;
+      background-color: #54afe3;
     }
 
     #menu .menu-item p {
       margin: 0;
+      font-size: 1rem;
+      color: var(--white);
+      font-weight: 500;
     }
   `;
 }

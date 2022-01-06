@@ -1,3 +1,4 @@
+import Icon from '../static/Icon';
 class CollapsibleList extends HTMLElement {
   constructor() {
     super();
@@ -37,6 +38,14 @@ function addListTemplate(elem: CollapsibleList) {
   if (!container) return;
   const headerContainer = document.createElement('div');
   headerContainer.setAttribute('id', 'header');
+  const headerIcon = document.createElement('div');
+  headerIcon.setAttribute('id', 'icon');
+  headerIcon.innerHTML = Icon.arrow();
+  const headerTitle = document.createElement('div');
+  headerTitle.setAttribute('id', 'title');
+
+  headerContainer.appendChild(headerIcon);
+  headerContainer.appendChild(headerTitle);
 
   const contentContainer = document.createElement('ul');
   contentContainer.setAttribute('id', 'content');
@@ -52,23 +61,39 @@ function addListStyle(elem: CollapsibleList) {
     #container {
       display: flex;
       flex-direction: column;
-      background-color: #eee;
-      padding: 10px;
     }
-    #container.closed {
-      border: 1px solid #ccc;
+    #container.closed #header #icon {
+      transform: rotate(0deg);
     }
     #container.closed #content {
       display: none;
     }
-
+    #header #icon {
+      width: var(--icon-size, 1rem);
+      height: var(--icon-size, 1rem);
+      transform: rotate(90deg);
+    }
+    #header #icon .icon {
+      fill: var(--gray);
+    }
+    #header #title {
+      padding-left: 8px;
+    }
+    #header, #content li {
+      padding: 0 14px;
+    }
     #header {
       width: 100%;
-      height: 30px;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    #header:hover, #content li:hover {
+          background-color: var(--key-color);
     }
     #content {
-      margin-bottom: 5px;
-      height: 200px;
+      padding-left: 44px;
       display: block;
     }
   `;

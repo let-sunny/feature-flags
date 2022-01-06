@@ -8,6 +8,6 @@
     "moduleResolution": "node",
     "typeRoots": ["./node_modules/@types", "./node_modules/@figma"]
   },
-  "include": ["src/**/*", "**/*.test.ts"],
+  "include": ["src/**/*", "**/*.test.ts", "src/types.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
