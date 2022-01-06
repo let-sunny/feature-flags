@@ -1,5 +1,5 @@
 {
-  "name": "feature-flags",
+  "name": "Feature Flags",
   "id": "1060555268166221818",
   "api": "1.0.0",
   "main": "dist/code.js",
