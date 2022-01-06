@@ -1,7 +1,7 @@
 import '@webcomponents/custom-elements/src/native-shim';
 import '@webcomponents/custom-elements/custom-elements.min';
 
-import './components/row';
+import './components';
 import './ui.css';
 
 document.getElementById('button')?.addEventListener('click', (e) => {

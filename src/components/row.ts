@@ -25,8 +25,8 @@ class Row extends HTMLElement {
 
   connectedCallback() {
     // element added to page.
-    addTemplate(this);
-    addStyle(this);
+    addRowTemplate(this);
+    addRowStyle(this);
   }
 
   disconnectedCallback() {
@@ -84,7 +84,7 @@ class Row extends HTMLElement {
 
 customElements.define('feature-flags-row', Row);
 
-function addTemplate(elem: HTMLElement) {
+function addRowTemplate(elem: HTMLElement) {
   const container = elem.shadowRoot?.querySelector('#container');
   if (!container) return;
 
@@ -118,7 +118,7 @@ function addTemplate(elem: HTMLElement) {
   }
 }
 
-function addStyle(elem: HTMLElement) {
+function addRowStyle(elem: HTMLElement) {
   const style = elem.shadowRoot?.querySelector('style');
   if (!style) return;
 
