@@ -4,8 +4,8 @@
 import fs from 'fs';
 window.document.body.innerHTML = fs.readFileSync('dist/ui.html', 'utf8');
 
-describe('button', () => {
+describe('ui', () => {
   it('should have defined', () => {
-    expect(document.getElementById('create')).toBeDefined;
+    expect(document.getElementById('ui')).toBeDefined;
   });
 });

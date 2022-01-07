@@ -8,6 +8,8 @@
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__);
 
+figma.ui.resize(300, 424);
+
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
@@ -29,5 +31,22 @@ figma.ui.onmessage = (msg) => {
 
   // Make sure to close the plugin when you're done. Otherwise the plugin will
   // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
+  // figma.closePlugin();
+
+  // if (msg.type === 'get-current-user') {
+  //   console.log('get-current-user');
+  //   figma.ui.postMessage(figma.currentPage);
+  // }
 };
+
+figma.on('selectionchange', () => {
+  console.log('changed');
+  // figma.currentPage.selection.forEach((node) => {
+  //   node.setPluginData('dragging', 'true');
+  // });
+  figma.ui.postMessage(
+    figma.currentPage.selection.map((node: any) => {
+      console.log(figma.getNodeById(node.id));
+    })
+  );
+});

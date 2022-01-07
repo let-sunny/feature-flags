@@ -1,37 +1,36 @@
-body {
-  font: 12px sans-serif;
-  text-align: center;
-  margin: 20px;
+:root {
+  font-size: 12px;
+  --black: #242424;
+  --gray: #c4c4c4;
+  --key-color: #d2e6f5;
+  --sub-color: #e9f2f9;
+  --white: #ffffff;
+  --icon-size: 14px;
 }
-button {
-  border-radius: 5px;
-  background: white;
-  color: black;
+
+body,
+p {
+  margin: 0;
+  padding: 0;
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 100%;
+}
+
+#ui #footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+button#create {
+  width: 100%;
+  background-color: #54afe3;
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: bold;
+  height: 40px;
   border: none;
-  padding: 8px 15px;
-  margin: 0 5px;
-  box-shadow: inset 0 0 0 1px black;
-  outline: none;
-}
-#create {
-  box-shadow: none;
-  background: #18a0fb;
-  color: white;
-}
-input {
-  border: none;
-  outline: none;
-  padding: 8px;
-}
-input:hover {
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-button:focus {
-  box-shadow: inset 0 0 0 2px #18a0fb;
-}
-#create:focus {
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
-}
-input:focus {
-  box-shadow: inset 0 0 0 2px #18a0fb;
 }
