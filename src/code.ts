@@ -5,48 +5,63 @@
 // You can access browser APIs in the <script> tag inside "ui.html" which has a
 // full browser environment (see documentation).
 
-// This shows the HTML page in "ui.html".
 figma.showUI(__html__);
+figma.ui.resize(300, 425);
 
-figma.ui.resize(300, 424);
-
-// Calls to "parent.postMessage" from within the HTML page will trigger this
-// callback. The callback will be passed the "pluginMessage" property of the
-// posted message.
-figma.ui.onmessage = (msg) => {
-  // One way of distinguishing between different types of messages sent from
-  // your HTML page is to use an object with a "type" property like this.
-  if (msg.type === 'create-rectangles') {
-    const nodes: SceneNode[] = [];
-    for (let i = 0; i < msg.count; i++) {
-      const rect = figma.createRectangle();
-      rect.x = i * 150;
-      rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0.5, b: 0 } }];
-      figma.currentPage.appendChild(rect);
-      nodes.push(rect);
+figma.ui.onmessage = async (msg) => {
+  switch (msg.type) {
+    case 'UPDATE_FEATURES': {
+      figma.clientStorage.setAsync('features', msg.features);
+      break;
     }
-    figma.currentPage.selection = nodes;
-    figma.viewport.scrollAndZoomIntoView(nodes);
+    case 'CHANGE_NODE_VISIBLE': {
+      const { nodes, visible } = msg;
+      const changedNodes = nodes.map((node: any) => {
+        const target = figma.getNodeById(node.id) as any;
+        if (target && target.visible !== undefined) {
+          target.visible = visible;
+        }
+        return target;
+      });
+
+      const currentPageNodes = figma.currentPage.findChildren((n) =>
+        changedNodes.find((node: any) => node.id == n.id)
+      );
+      figma.currentPage.selection = currentPageNodes;
+      figma.viewport.scrollAndZoomIntoView(changedNodes);
+      break;
+    }
+    default:
+      throw new Error('Unknown message type');
   }
-
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  // figma.closePlugin();
-
-  // if (msg.type === 'get-current-user') {
-  //   console.log('get-current-user');
-  //   figma.ui.postMessage(figma.currentPage);
-  // }
 };
 
 figma.on('selectionchange', () => {
-  console.log('changed');
-  // figma.currentPage.selection.forEach((node) => {
-  //   node.setPluginData('dragging', 'true');
-  // });
-  figma.ui.postMessage(
-    figma.currentPage.selection.map((node: any) => {
-      console.log(figma.getNodeById(node.id));
+  const nodes = figma.currentPage.selection
+    .map((node: any) => {
+      return figma.getNodeById(node.id);
     })
-  );
+    .map((node: any) => ({
+      id: node.id,
+      name: node.name,
+      type: 'NODE',
+      visible: node.visible,
+      node:
+        node.type === 'FRAME' && node.layoutMode !== 'NONE'
+          ? node.layoutMode
+          : node.type,
+    }));
+
+  figma.ui.postMessage({
+    type: 'UPDATE_SELECTION',
+    value: { nodes },
+  });
 });
+
+(async () => {
+  const features = (await figma.clientStorage.getAsync('features')) || [];
+  figma.ui.postMessage({
+    type: 'INIT_FEATURES',
+    value: { features },
+  });
+})();

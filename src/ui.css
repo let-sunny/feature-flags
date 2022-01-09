@@ -8,6 +8,10 @@
   --icon-size: 14px;
 }
 
+html > * {
+  cursor: default;
+}
+
 body,
 p {
   margin: 0;
@@ -16,21 +20,4 @@ p {
   font-style: normal;
   font-weight: normal;
   line-height: 100%;
-}
-
-#ui #footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-button#create {
-  width: 100%;
-  background-color: #54afe3;
-  color: var(--white);
-  font-size: 1rem;
-  font-weight: bold;
-  height: 40px;
-  border: none;
 }

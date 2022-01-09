@@ -1,80 +1,83 @@
 import '@webcomponents/custom-elements/src/native-shim';
 import '@webcomponents/custom-elements/custom-elements.min';
 
-import './ui.css';
+import { APP_EVENTS, APP_TAG_NAME, getAppElement } from './components/app/App';
+import { CONTAINER_TAG_NAME } from './components/feature-container/FeatureContainer';
+
 import './components';
+import './ui.css';
+import { Node } from './components/types';
 
-document.addEventListener('contextmenu', (e) => {
-  parent.postMessage({ pluginMessage: { type: 'get-current-user' } }, '*');
-  const target = e
-    .composedPath()
-    .find(
-      (elem) => (elem as HTMLElement).tagName === 'FEATURE-FLAGS-ROW'
-    ) as HTMLElement;
-
-  if (target) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const contextMenuElement = document.querySelector(
-      'feature-flags-context-menu'
-    );
-    contextMenuElement?.setAttribute('x', e.clientX.toString());
-    contextMenuElement?.setAttribute('y', e.clientY.toString());
-    contextMenuElement?.setAttribute('for', target.getAttribute('key') || '');
-  }
-});
-
-document.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement;
-  if (target?.tagName !== 'FEATURE-FLAGS-CONTEXT-MENU') {
-    const contextMenuElement = document.querySelector(
-      'feature-flags-context-menu'
-    );
-    contextMenuElement?.removeAttribute('for');
-  }
-});
-
-document.addEventListener('dragstart', (e) => {
-  console.log('dragstart:', e.target);
-});
-
-// document.getElementById('create')?.addEventListener('click', () => {
-//   const textbox = document.getElementById('count') as HTMLInputElement;
-//   const count = parseInt(textbox.value, 10);
-//   parent.postMessage(
-//     { pluginMessage: { type: 'create-rectangles', count } },
-//     '*'
-//   );
-// });
-
-// document.getElementById('cancel')?.addEventListener('click', () => {
-//   parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
-// });
-
-let selection: any = [];
-let dragged = false;
 onmessage = (event) => {
-  console.log('got this from the plugin code', event.data.pluginMessage);
-  selection = event.data.pluginMessage;
+  const { type, value } = event.data.pluginMessage;
+  switch (type) {
+    case 'INIT_FEATURES': {
+      const app = document.createElement(APP_TAG_NAME);
+      app.setAttribute('features', JSON.stringify(value.features));
+      document.querySelector('#ui')?.appendChild(app);
+      break;
+    }
+    case 'UPDATE_SELECTION': {
+      getAppElement()?.setAttribute('selection', JSON.stringify(value.nodes));
+      break;
+    }
+    default:
+      throw new Error('Unknown message type');
+  }
 };
 
-document.addEventListener('mousedown', (e) => {
-  console.log('mousedown:', e.target);
-  dragged = false;
-});
-document.addEventListener('mouseup', (e) => {
-  console.log('mouseup:', e.target);
-  selection.forEach((node: any) => {
-    console.log(node);
+document.addEventListener(APP_EVENTS.UPDATE_FEATURES, ((event: CustomEvent) => {
+  parent.postMessage(
+    {
+      pluginMessage: {
+        type: APP_EVENTS.UPDATE_FEATURES,
+        features: event.detail.features,
+      },
+    },
+    '*'
+  );
+}) as EventListener);
+
+document.addEventListener(APP_EVENTS.CHANGE_NODE_VISIBLE, ((
+  event: CustomEvent
+) => {
+  parent.postMessage(
+    {
+      pluginMessage: {
+        type: APP_EVENTS.CHANGE_NODE_VISIBLE,
+        nodes: event.detail.nodes,
+        visible: event.detail.visible,
+      },
+    },
+    '*'
+  );
+}) as EventListener);
+
+(function () {
+  let dropFromFigma = false;
+  document.addEventListener('mousedown', () => {
+    dropFromFigma = false;
   });
-  if (dragged) {
-    console.log('copied');
-    console.log(e.pageX, e.pageY);
-  }
-  dragged = false;
-});
-document.addEventListener('mouseleave', (e) => {
-  dragged = true;
-  console.log('museleave:', dragged);
-});
+  document.addEventListener('mouseup', (event: MouseEvent) => {
+    if (dropFromFigma) {
+      const target = event.composedPath() as HTMLElement[];
+      const feature = target.find(
+        (el) => el.tagName === CONTAINER_TAG_NAME.toUpperCase()
+      );
+
+      if (feature) {
+        getAppElement()?.dispatchEvent(
+          new CustomEvent(APP_EVENTS.ADD_NODES, {
+            detail: {
+              featureId: feature.id,
+            },
+          })
+        );
+      }
+    }
+    dropFromFigma = false;
+  });
+  document.addEventListener('mouseleave', () => {
+    dropFromFigma = true;
+  });
+})();
