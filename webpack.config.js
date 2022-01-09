@@ -27,11 +27,32 @@ module.exports = (env, argv) => ({
       { test: /\.(png|jpg|gif|webp|svg)$/, loader: 'url-loader' },
 
       { test: /\.(png|jpe?g|gif|svg)$/i, use: [{ loader: 'file-loader' }] },
+
+      // for custom elements templates
+      {
+        test: /\.html$/i,
+        loader: 'html-loader',
+      },
+      // for custom elements styles
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          'raw-loader',
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [path.resolve(__dirname, 'node_modules')],
+              },
+            },
+          },
+        ],
+      },
     ],
   },
 
   // Webpack tries these extensions for you if you omit the extension like "import './file'"
-  resolve: { extensions: ['.tsx', '.ts', '.jsx', '.js'] },
+  resolve: { extensions: ['.tsx', '.ts', '.jsx', '.js', '.scss'] },
 
   optimization: {
     minimize: true,
