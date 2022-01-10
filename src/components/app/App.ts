@@ -3,7 +3,7 @@ import CustomElement from '../CustomElement';
 import Template from './template.html';
 import Style from './style.scss';
 
-import { Feature, Focused } from '../types';
+import { Feature, Node, Focused } from '../types';
 import { CONTEXT_MENU_TAG_NAME } from './../context-menu/ContextMenu';
 import {
   CONTAINER_TAG_NAME,
@@ -43,7 +43,7 @@ export default class App extends CustomElement {
     this.setAttribute('features', JSON.stringify(feature));
   }
 
-  get selectionNodesFromFigmaPage() {
+  get selectionNodesFromFigmaPage(): Node[] {
     return JSON.parse(this.getAttribute('selection') || '[]');
   }
 
@@ -181,7 +181,12 @@ export default class App extends CustomElement {
         if (feature.id === detail.featureId) {
           const newFeature = {
             ...feature,
-            items: [...feature.items, ...this.selectionNodesFromFigmaPage],
+            items: [
+              ...feature.items,
+              ...this.selectionNodesFromFigmaPage.filter((newNode) =>
+                feature.items.every((exist) => exist.id !== newNode.id)
+              ),
+            ],
           };
           syncNodeVisible(newFeature);
           return newFeature;
@@ -296,7 +301,7 @@ export const getContextMenu = () => {
 
 const getNewFeature = (index: number): Feature => {
   return {
-    id: `${index}`,
+    id: `${new Date().getTime()}-${index}`, // TODO: unique id
     name: `Feature ${index}`,
     type: 'FEATURE',
     visible: true,
