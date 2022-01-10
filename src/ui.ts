@@ -18,8 +18,6 @@ import './ui.css';
 
 // UI event handler
 class UIEventHandler {
-  dropFromFigma = false;
-
   constructor() {
     this.onMessageFromFigma();
     this.onDropFromFigma();
@@ -28,6 +26,7 @@ class UIEventHandler {
     this.onRequestUpdatedFeatures();
     this.onKeyPressed();
     this.onRequestSync();
+    this.onDoubleClick();
   }
 
   onMessageFromFigma() {
@@ -62,11 +61,12 @@ class UIEventHandler {
   }
 
   onDropFromFigma() {
+    let dropFromFigma = false;
     document.addEventListener('mousedown', () => {
-      this.dropFromFigma = false;
+      dropFromFigma = false;
     });
     document.addEventListener('mouseup', (event: MouseEvent) => {
-      if (this.dropFromFigma) {
+      if (dropFromFigma) {
         const target = event.composedPath() as HTMLElement[];
         const feature = target.find(
           (el) => el.tagName === CONTAINER_TAG_NAME.toUpperCase()
@@ -82,10 +82,10 @@ class UIEventHandler {
           );
         }
       }
-      this.dropFromFigma = false;
+      dropFromFigma = false;
     });
     document.addEventListener('mouseleave', () => {
-      this.dropFromFigma = true;
+      dropFromFigma = true;
     });
   }
 
@@ -120,6 +120,14 @@ class UIEventHandler {
           new CustomEvent(APP_EVENTS.REQUEST_RENAME_FEATURE)
         );
       }
+    });
+  }
+
+  onDoubleClick() {
+    document.addEventListener('dblclick', () => {
+      getAppElement()?.dispatchEvent(
+        new CustomEvent(APP_EVENTS.REQUEST_RENAME_FEATURE)
+      );
     });
   }
 
