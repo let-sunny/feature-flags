@@ -91,6 +91,7 @@
 .content {
   display: block;
   margin: 0;
+  padding: 0;
   list-style: none;
 
   .item {
@@ -99,11 +100,11 @@
   }
 }
 
-.header[selected='true'],
-.content[selected='true'] {
+.header.focused,
+.item.focused {
   background-color: var(--key-color);
 }
 
-.header[selected='true'] + .content {
+.header.focused + .content {
   background-color: var(--sub-color);
 }

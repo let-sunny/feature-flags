@@ -1,16 +1,23 @@
-export interface Node {
-  id: string;
-  node: string;
-  type: 'NODE';
-  name: string;
-  visible: boolean;
+export interface Focused {
+  id?: string;
+  parentId?: string;
+  type?: ItemType;
 }
-export interface Feature {
+interface ItemBase {
   id: string;
+  type: ItemType;
   name: string;
-  type: 'FEATURE';
   visible: boolean;
+  focused: Focused;
+}
+export interface Node extends ItemBase {
+  type: 'NODE';
+  node: string;
+}
+export interface Feature extends ItemBase {
+  type: 'FEATURE';
   items: Item[];
 }
+
 export type Item = Feature | Node;
-export type ItemType = Feature['type'] | Node['type'];
+export type ItemType = Item['type'];

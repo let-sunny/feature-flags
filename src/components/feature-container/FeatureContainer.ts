@@ -1,3 +1,4 @@
+import { Focused, ItemType } from './../types';
 import { ROW_TAG_NAME } from './../row/Row';
 import CustomElement from '../CustomElement';
 import Style from './style.scss';
@@ -7,17 +8,20 @@ import { Feature } from '../types';
 import { createFeatureRow, createNodeRow } from '../row/Row';
 import { getAppElement, APP_EVENTS } from '../app/App';
 
-type Attribute = 'items' | 'visible';
+type Attribute = 'items' | 'visible' | 'focused';
 
 export const CONTAINER_TAG_NAME = 'feature-flags-container';
 
 export default class FeatureContainer extends CustomElement {
+  focused: Focused | null;
+
   static get observedAttributes(): Attribute[] {
-    return ['items', 'visible'];
+    return ['items', 'visible', 'focused'];
   }
 
   constructor() {
     super(Template, Style);
+    this.focused = null;
   }
 
   get closed() {
@@ -44,6 +48,11 @@ export default class FeatureContainer extends CustomElement {
 
     this.onRequestToggleVisible();
     this.onRequestAddNodes();
+
+    const header = this.shadowRoot?.querySelector(
+      '.header-content'
+    ) as HTMLElement;
+    this.onRequestFocus(header);
   }
 
   attributeChangedCallback(
@@ -65,23 +74,75 @@ export default class FeatureContainer extends CustomElement {
         }
 
         const childrenElements = items.map((item) => {
+          const listItem = (
+            this.shadowRoot?.getElementById('list-item') as HTMLTemplateElement
+          ).content.firstElementChild?.cloneNode(true) as HTMLElement;
+          listItem.id = item.id;
+
           switch (item.type) {
-            case 'FEATURE':
-              return createFeatureContainer({
-                ...item,
-                visible: this.visible,
-              });
-            case 'NODE':
-              return createNodeRow({
-                ...item,
-                visible: this.visible,
-              });
+            case 'FEATURE': {
+              listItem.appendChild(
+                createFeatureContainer({
+                  ...item,
+                  visible: this.visible,
+                })
+              );
+              break;
+            }
+            case 'NODE': {
+              listItem.appendChild(
+                createNodeRow({
+                  ...item,
+                  visible: this.visible,
+                })
+              );
+              break;
+            }
             default:
               throw new Error('Unknown child type');
           }
+
+          this.onRequestFocus(listItem);
+          return listItem;
         });
 
         container?.replaceChildren(...childrenElements);
+        break;
+      }
+      case 'focused': {
+        const newFocused = JSON.parse(newValue) as Focused;
+        if (!newFocused.id) return;
+
+        requestAnimationFrame(() => {
+          if (
+            this.id === newFocused.id &&
+            this.focused?.type === newFocused.type
+          ) {
+            // add focused style
+            this.shadowRoot?.querySelector('.header')?.classList.add('focused');
+            this.shadowRoot
+              ?.getElementById(`${newFocused.id}`)
+              ?.classList.remove('focused');
+          } else if (this.id === newFocused.parentId) {
+            // add focused style
+            this.shadowRoot
+              ?.getElementById(`${newFocused.id}`)
+              ?.classList.add('focused');
+
+            this.shadowRoot
+              ?.querySelector('.header')
+              ?.classList.remove('focused');
+          } else {
+            this.focused = null;
+            // remove focused style
+            this.shadowRoot
+              ?.querySelector('.header')
+              ?.classList.remove('focused');
+            this.shadowRoot
+              ?.getElementById(`${newFocused.id}`)
+              ?.classList.remove('focused');
+          }
+        });
         break;
       }
       default:
@@ -105,13 +166,29 @@ export default class FeatureContainer extends CustomElement {
         onAddNodes(this.id);
       });
   }
+
+  onRequestFocus(elem?: HTMLElement | null) {
+    elem?.addEventListener('click', (event) => {
+      event.composedPath().find((target) => {
+        const element = target as HTMLElement;
+        if (element.tagName === ROW_TAG_NAME.toUpperCase()) {
+          this.focused = {
+            id: element.id,
+            parentId: this.id,
+            type: element.getAttribute('type') as ItemType,
+          };
+
+          onFocus(this.focused);
+        }
+      });
+    });
+  }
 }
 
 export const createFeatureContainer = (feature: Feature) => {
   const element = document.createElement(CONTAINER_TAG_NAME);
   element.setAttribute('id', feature.id);
-  element.setAttribute('items', JSON.stringify(feature.items));
-  element.setAttribute('visible', JSON.stringify(feature.visible));
+  updateFeatureContainer(element, feature);
 
   const featureRow = createFeatureRow(feature);
   element.appendChild(featureRow);
@@ -124,6 +201,7 @@ export const updateFeatureContainer = (
 ) => {
   element?.setAttribute('items', JSON.stringify(feature.items));
   element?.setAttribute('visible', JSON.stringify(feature.visible));
+  element?.setAttribute('focused', JSON.stringify(feature.focused || '{}'));
 };
 
 const onAddNodes = (featureId: string) => {
@@ -138,6 +216,14 @@ const onToggleVisible = (featureId: string, visible: boolean) => {
   getAppElement()?.dispatchEvent(
     new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
       detail: { id: featureId, visible },
+    })
+  );
+};
+
+const onFocus = (focused: Focused) => {
+  getAppElement()?.dispatchEvent(
+    new CustomEvent(APP_EVENTS.FOCUS, {
+      detail: focused,
     })
   );
 };

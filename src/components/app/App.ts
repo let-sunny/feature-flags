@@ -2,7 +2,7 @@ import CustomElement from '../CustomElement';
 import Template from './template.html';
 import Style from './style.scss';
 
-import { Feature } from '../types';
+import { Feature, Focused } from '../types';
 import { CONTEXT_MENU_TAG_NAME } from './../context-menu/ContextMenu';
 import {
   CONTAINER_TAG_NAME,
@@ -10,7 +10,7 @@ import {
   updateFeatureContainer,
 } from '../feature-container/FeatureContainer';
 
-type Attribute = 'features' | 'selected' | 'selection';
+type Attribute = 'features' | 'focused' | 'selection';
 
 export const APP_TAG_NAME = 'feature-flags-app';
 export const APP_EVENTS = {
@@ -21,12 +21,13 @@ export const APP_EVENTS = {
   UPDATE_FEATURES: 'UPDATE_FEATURES',
   ADD_NODES: 'ADD_NODES',
   CHANGE_NODE_VISIBLE: 'CHANGE_NODE_VISIBLE',
+  FOCUS: 'FOCUS',
 };
 
 export default class App extends CustomElement {
   index: number;
   static get observedAttributes(): Attribute[] {
-    return ['features'];
+    return ['features', 'focused'];
   }
 
   get features(): Feature[] {
@@ -39,6 +40,10 @@ export default class App extends CustomElement {
 
   get selectionNodesFromFigmaPage() {
     return JSON.parse(this.getAttribute('selection') || '[]');
+  }
+
+  get focused() {
+    return JSON.parse(this.getAttribute('focused') || 'null') as Focused;
   }
 
   constructor() {
@@ -55,6 +60,7 @@ export default class App extends CustomElement {
     this.onChangeFeatureVisible();
     this.onDeleteNode();
     this.onAddNodes();
+    this.onFocus();
   }
 
   attributeChangedCallback(
@@ -109,6 +115,20 @@ export default class App extends CustomElement {
         });
         break;
       }
+      case 'focused': {
+        this.features.forEach((feature) => {
+          const featureContainer = this.shadowRoot?.querySelector(
+            `${CONTAINER_TAG_NAME}[id="${feature.id}"]`
+          ) as HTMLElement;
+          if (featureContainer) {
+            updateFeatureContainer(featureContainer, {
+              ...feature,
+              focused: this.focused,
+            });
+          }
+        });
+        break;
+      }
       default:
         throw new Error('Unknown attribute');
     }
@@ -122,6 +142,13 @@ export default class App extends CustomElement {
   }
 
   // event handlers
+  onFocus() {
+    this.addEventListener(APP_EVENTS.FOCUS, ((e: CustomEvent) => {
+      const { detail } = e;
+      this.setAttribute('focused', JSON.stringify(detail));
+    }) as EventListener);
+  }
+
   onDeleteNode() {
     this.addEventListener(APP_EVENTS.DELETE_NODE, ((e: CustomEvent) => {
       const { detail } = e;
@@ -224,6 +251,7 @@ const getNewFeature = (index: number): Feature => {
     name: `Feature ${index}`,
     type: 'FEATURE',
     visible: true,
+    focused: {},
     items: [],
   };
 };
