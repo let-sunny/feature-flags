@@ -2,7 +2,6 @@ import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
 import { Feature, Node } from '../types';
-import { getAppElement, APP_EVENTS } from '../app/App';
 
 type Attribute = 'type' | 'id' | 'name' | 'editable' | 'visible' | 'node-type';
 
@@ -18,36 +17,6 @@ export default class Row extends CustomElement {
 
   constructor() {
     super(Template, Style);
-
-    this.initIcons();
-  }
-
-  get visible() {
-    return this.getAttribute('visible') === 'true';
-  }
-
-  initIcons() {
-    const shadow = this.shadowRoot;
-    if (!shadow) return;
-
-    // visibility icons
-    const toggle = shadow.querySelector('.toggle');
-    const visibilityIcons = shadow.querySelector(
-      '#icons__visibility'
-    ) as HTMLTemplateElement;
-    toggle?.appendChild(visibilityIcons.content.cloneNode(true));
-
-    // node-type icons
-    const nodeType = shadow.querySelector('.node-type');
-    const nodeTypeIcons = shadow.querySelector(
-      '#icons__node-type'
-    ) as HTMLTemplateElement;
-    nodeType?.appendChild(nodeTypeIcons.content.cloneNode(true));
-  }
-
-  connectedCallback() {
-    this.onToggleVisible();
-    this.onAddNodes();
   }
 
   attributeChangedCallback(
@@ -69,27 +38,6 @@ export default class Row extends CustomElement {
       default:
         throw new Error('Unknown attribute');
     }
-  }
-
-  // event handlers
-  onToggleVisible() {
-    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
-      getAppElement()?.dispatchEvent(
-        new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
-          detail: { id: this.id, visible: !this.visible },
-        })
-      );
-    });
-  }
-
-  onAddNodes() {
-    this.shadowRoot?.querySelector('.add')?.addEventListener('click', () => {
-      getAppElement()?.dispatchEvent(
-        new CustomEvent(APP_EVENTS.ADD_NODES, {
-          detail: { featureId: this.id },
-        })
-      );
-    });
   }
 }
 

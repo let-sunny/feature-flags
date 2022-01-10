@@ -20,6 +20,9 @@
   width: 140px;
   padding: 12px 0;
 
+  .menu-item.hidden {
+    display: none;
+  }
   .menu-item > a {
     display: flex;
     flex-direction: row;

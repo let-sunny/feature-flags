@@ -4,6 +4,7 @@ import Template from './template.html';
 
 import { Feature } from '../types';
 import { createFeatureRow, createNodeRow } from '../row/Row';
+import { getAppElement, APP_EVENTS } from '../app/App';
 
 type Attribute = 'items' | 'visible';
 
@@ -39,6 +40,9 @@ export default class FeatureContainer extends CustomElement {
     this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
       this.closed = !this.closed;
     });
+
+    this.onRequestToggleVisible();
+    this.onRequestAddNodes();
   }
 
   attributeChangedCallback(
@@ -78,6 +82,23 @@ export default class FeatureContainer extends CustomElement {
         throw new Error('Unknown attribute');
     }
   }
+
+  // event handlers
+  onRequestToggleVisible() {
+    this.shadowRoot
+      ?.querySelector('#toggle-visible')
+      ?.addEventListener('click', () => {
+        onToggleVisible(this.id, !this.visible);
+      });
+  }
+
+  onRequestAddNodes() {
+    this.shadowRoot
+      ?.querySelector('#add-node')
+      ?.addEventListener('click', () => {
+        onAddNodes(this.id);
+      });
+  }
 }
 
 export const createFeatureContainer = (feature: Feature) => {
@@ -89,4 +110,20 @@ export const createFeatureContainer = (feature: Feature) => {
   const featureRow = createFeatureRow(feature);
   element.appendChild(featureRow);
   return element;
+};
+
+const onAddNodes = (featureId: string) => {
+  getAppElement()?.dispatchEvent(
+    new CustomEvent(APP_EVENTS.ADD_NODES, {
+      detail: { featureId },
+    })
+  );
+};
+
+const onToggleVisible = (featureId: string, visible: boolean) => {
+  getAppElement()?.dispatchEvent(
+    new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
+      detail: { id: featureId, visible },
+    })
+  );
 };

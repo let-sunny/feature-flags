@@ -3,6 +3,7 @@ import Template from './template.html';
 import Style from './style.scss';
 
 import { Feature } from '../types';
+import { CONTEXT_MENU_TAG_NAME } from './../context-menu/ContextMenu';
 import { createFeatureContainer } from '../feature-container/FeatureContainer';
 
 type Attribute = 'features' | 'selected' | 'selection';
@@ -81,7 +82,7 @@ export default class App extends CustomElement {
     }
   }
 
-  // ---- event handlers ----
+  // event handlers
   onDeleteNode() {
     this.addEventListener(APP_EVENTS.DELETE_NODE, ((e: CustomEvent) => {
       const { detail } = e;
@@ -103,10 +104,12 @@ export default class App extends CustomElement {
       const { detail } = e;
       this.features = this.features.map((feature) => {
         if (feature.id === detail.featureId) {
-          return {
+          const newFeature = {
             ...feature,
             items: [...feature.items, ...this.selectionNodesFromFigmaPage],
           };
+          syncNodeVisible(newFeature);
+          return newFeature;
         } else {
           return feature;
         }
@@ -157,26 +160,23 @@ export default class App extends CustomElement {
 
       this.features = this.features.map((feature) => {
         if (feature.id == detail.id) {
-          return { ...feature, visible: detail.visible };
+          const newFeature = { ...feature, visible: detail.visible };
+          syncNodeVisible(newFeature);
+          return newFeature;
         } else {
           return feature;
         }
       });
-
-      document.dispatchEvent(
-        new CustomEvent(APP_EVENTS.CHANGE_NODE_VISIBLE, {
-          detail: {
-            nodes: targetFeature.items.filter((item) => item.type === 'NODE'),
-            visible: detail.visible,
-          },
-        })
-      );
     }) as EventListener);
   }
 }
 
 export const getAppElement = () => {
   return document.querySelector(APP_TAG_NAME);
+};
+
+export const getContextMenu = () => {
+  return getAppElement()?.shadowRoot?.querySelector(CONTEXT_MENU_TAG_NAME);
 };
 
 const getNewFeature = (index: number): Feature => {
@@ -194,6 +194,17 @@ const onUpdateFeature = (features: Feature[]) => {
     new CustomEvent(APP_EVENTS.UPDATE_FEATURES, {
       detail: {
         features,
+      },
+    })
+  );
+};
+
+const syncNodeVisible = (feature: Feature) => {
+  document.dispatchEvent(
+    new CustomEvent(APP_EVENTS.CHANGE_NODE_VISIBLE, {
+      detail: {
+        nodes: feature.items.filter((item) => item.type === 'NODE'),
+        visible: feature.visible,
       },
     })
   );

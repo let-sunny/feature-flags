@@ -1,3 +1,30 @@
+@mixin visibility-icon($visible) {
+  .icon {
+    @if $visible {
+      &.visible {
+        display: block;
+      }
+      &.hidden {
+        display: none;
+      }
+    } @else {
+      &.hidden {
+        display: block;
+      }
+      &.visible {
+        display: none;
+      }
+    }
+  }
+}
+
+:host {
+  @include visibility-icon(false);
+}
+:host([visible='true']) {
+  @include visibility-icon(true);
+}
+
 :host([closed='true']) {
   .header .toggle {
     transform: rotate(0deg);
@@ -13,6 +40,8 @@
 }
 
 .header {
+  position: relative;
+
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -31,6 +60,31 @@
   .header-content {
     flex: 1;
     padding-left: 8px;
+  }
+
+  .controls {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 14px;
+
+    #add-node {
+      margin-right: 12px;
+    }
+
+    .icon {
+      &.visible {
+        fill: var(--black);
+      }
+      &.hidden {
+        fill: var(--gray);
+      }
+    }
   }
 }
 

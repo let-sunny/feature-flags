@@ -6,6 +6,10 @@ import { getAppElement, APP_EVENTS } from '../app/App';
 import { ItemType } from '../types';
 
 export const CONTEXT_MENU_TAG_NAME = 'feature-flags-context-menu';
+export const EVENTS = {
+  OPEN_CONTEXT_MENU: 'OPEN_CONTEXT_MENU',
+  CLOSE_CONTEXT_MENU: 'CLOSE_CONTEXT_MENU',
+};
 export default class ContextMenu extends CustomElement {
   target: HTMLElement | null;
   constructor() {
@@ -15,23 +19,10 @@ export default class ContextMenu extends CustomElement {
   }
 
   connectedCallback() {
-    document.addEventListener(
-      'contextmenu',
-      this.contextMenuHandler.bind(this)
-    );
-    document.addEventListener('click', this.closeHandler.bind(this));
-
-    const actions: ('rename' | 'delete')[] = ['rename', 'delete'];
-    actions.forEach((action) => {
-      this.shadowRoot
-        ?.querySelector(`#${action}`)
-        ?.addEventListener('click', this[action].bind(this));
-    });
-  }
-
-  disconnectedCallback() {
-    document.removeEventListener('contextmenu', this.contextMenuHandler);
-    document.removeEventListener('click', this.closeHandler);
+    this.onOpen();
+    this.onClose();
+    this.onRequestRename();
+    this.onRequestDelete();
   }
 
   close() {
@@ -40,56 +31,76 @@ export default class ContextMenu extends CustomElement {
     });
   }
 
-  contextMenuHandler(e: MouseEvent) {
-    e.preventDefault();
+  onOpen() {
+    this.addEventListener(EVENTS.OPEN_CONTEXT_MENU, (({
+      detail: event,
+    }: CustomEvent) => {
+      const row = (event.composedPath() as HTMLElement[]).find(
+        (target) => target.tagName === ROW_TAG_NAME.toUpperCase()
+      );
 
-    const row = (e.composedPath() as HTMLElement[]).find(
-      (target) => target.tagName === ROW_TAG_NAME.toUpperCase()
-    );
-    this.target = row || null;
-    if (this.target) {
-      requestAnimationFrame(() => {
-        this.style.display = 'block';
-        this.style.left = `${e.pageX}px`;
-        this.style.top = `${e.pageY}px`;
-      });
-    }
+      this.target = row || null;
+      if (this.target) {
+        const type = this.target.getAttribute('type') as ItemType;
+        requestAnimationFrame(() => {
+          // rename is able only for feature
+          if (type === 'FEATURE') {
+            this.shadowRoot
+              ?.querySelector('.menu-item.rename')
+              ?.classList.remove('hidden');
+          } else {
+            this.shadowRoot
+              ?.querySelector('.menu-item.rename')
+              ?.classList.add('hidden');
+          }
+
+          this.style.display = 'block';
+          this.style.left = `${event.pageX}px`;
+          this.style.top = `${event.pageY}px`;
+        });
+      }
+    }) as EventListener);
   }
 
-  closeHandler(e: MouseEvent) {
-    e.preventDefault();
-
-    const closed = (e.composedPath() as HTMLElement[]).every(
-      (target) => target.tagName !== CONTEXT_MENU_TAG_NAME.toUpperCase()
-    );
-    if (closed) {
+  // event handlers
+  onClose() {
+    this.addEventListener(EVENTS.CLOSE_CONTEXT_MENU, (() => {
       this.close();
-    }
+    }) as EventListener);
   }
 
-  rename() {
-    this.target?.dispatchEvent(
-      new CustomEvent(ROW_EVENTS.REQUEST_RENAME, {
-        detail: {
-          id: this.target.getAttribute('id'),
-          type: this.target.getAttribute('type'),
-        },
-      })
-    );
-    this.close();
+  onRequestRename() {
+    this.shadowRoot?.querySelector('#rename')?.addEventListener('click', () => {
+      onRenameFeature(this.target);
+      this.close();
+    });
   }
 
-  delete() {
-    const type = this.target?.getAttribute('type') as ItemType;
-    const eventName =
-      type === 'FEATURE' ? APP_EVENTS.DELETE_FEATURE : APP_EVENTS.DELETE_NODE;
-    getAppElement()?.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: {
-          id: this.target?.getAttribute('id'),
-        },
-      })
-    );
-    this.close();
+  onRequestDelete() {
+    this.shadowRoot?.querySelector('#delete')?.addEventListener('click', () => {
+      const type = this.target?.getAttribute('type') as ItemType;
+      const targetId = this.target?.getAttribute('id');
+      if (type && targetId) {
+        onDeleteFeatureChild(type, targetId);
+      }
+      this.close();
+    });
   }
 }
+
+const onRenameFeature = (featureElement: HTMLElement | null) => {
+  featureElement?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
+};
+
+const onDeleteFeatureChild = (type: ItemType, id: string) => {
+  const eventName =
+    type === 'FEATURE' ? APP_EVENTS.DELETE_FEATURE : APP_EVENTS.DELETE_NODE;
+  const app = getAppElement();
+  app?.dispatchEvent(
+    new CustomEvent(eventName, {
+      detail: {
+        id,
+      },
+    })
+  );
+};

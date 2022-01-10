@@ -6,26 +6,6 @@
   }
 }
 
-@mixin visibility-icon($visible) {
-  .icon {
-    @if $visible {
-      &.visible {
-        display: block;
-      }
-      &.hidden {
-        display: none;
-      }
-    } @else {
-      &.hidden {
-        display: block;
-      }
-      &.visible {
-        display: none;
-      }
-    }
-  }
-}
-
 @mixin node-type-icon($type) {
   .icon {
     @if ($type == 'FRAME') {
@@ -67,24 +47,18 @@
 
 :host {
   @include container-color(var(--gray));
-  @include visibility-icon(false);
 }
 
 :host([visible='true']) {
-  @include visibility-icon(true);
   @include container-color(var(--black));
 }
 :host([type='NODE']) {
   .content .node-type {
     display: block;
-  }
 
-  .node-type + .name {
-    padding-left: 8px;
-  }
-
-  .controls {
-    display: none;
+    & + .name {
+      padding-left: 8px;
+    }
   }
 }
 
@@ -100,20 +74,15 @@ $nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
 .container {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
   align-items: center;
   padding: 12px 0;
 }
 
-.content,
-.controls {
+.content {
+  flex: 1;
   display: flex;
   flex-direction: row;
   align-items: center;
-}
-
-.content {
-  flex: 1;
 
   .node-type {
     display: none;
@@ -135,19 +104,5 @@ $nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
 .controls {
   .add {
     margin-right: 12px;
-  }
-  .toggle {
-    display: flex;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    width: var(--icon-size, 1rem);
-    height: var(--icon-size, 1rem);
-    position: relative;
-
-    .icon {
-      position: absolute;
-    }
   }
 }
