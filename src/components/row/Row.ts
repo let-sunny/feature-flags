@@ -2,6 +2,7 @@ import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
 import { Feature, Node } from '../types';
+import { APP_EVENTS, getAppElement } from '../app/App';
 
 type Attribute = 'type' | 'id' | 'name' | 'editable' | 'visible' | 'node-type';
 
@@ -17,6 +18,10 @@ export default class Row extends CustomElement {
 
   constructor() {
     super(Template, Style);
+  }
+
+  connectedCallback() {
+    this.onRequestRename();
   }
 
   attributeChangedCallback(
@@ -39,6 +44,31 @@ export default class Row extends CustomElement {
         throw new Error('Unknown attribute');
     }
   }
+
+  // event handlers
+  onRequestRename() {
+    const input = this.shadowRoot?.querySelector('.input') as HTMLInputElement;
+    if (!input) return;
+    input.addEventListener('blur', () => {
+      requestAnimationFrame(() => {
+        input.style.display = 'none';
+      });
+      onRename(this.id, input.value);
+    });
+    input.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter') {
+        input.blur();
+      }
+    });
+
+    this.addEventListener(ROW_EVENTS.REQUEST_RENAME, (() => {
+      requestAnimationFrame(() => {
+        input.style.display = 'block';
+        input.focus();
+      });
+    }) as EventListener);
+  }
 }
 
 export const createFeatureRow = (feature: Feature) => {
@@ -60,4 +90,15 @@ export const createNodeRow = (node: Node) => {
   element.setAttribute('type', node.type);
   element.setAttribute('node-type', node.node);
   return element;
+};
+
+const onRename = (id: string, name: string) => {
+  getAppElement()?.dispatchEvent(
+    new CustomEvent(APP_EVENTS.RENAME_FEATURE, {
+      detail: {
+        id,
+        name: name.trim(),
+      },
+    })
+  );
 };

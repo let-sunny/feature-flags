@@ -1,3 +1,4 @@
+import { ROW_TAG_NAME, ROW_EVENTS } from './../row/Row';
 import CustomElement from '../CustomElement';
 import Template from './template.html';
 import Style from './style.scss';
@@ -16,12 +17,14 @@ export const APP_TAG_NAME = 'feature-flags-app';
 export const APP_EVENTS = {
   CHANGE_VISIBLE: 'CHANGE_VISIBLE',
   RENAME_FEATURE: 'RENAME_FEATURE',
+  REQUEST_RENAME_FEATURE: 'REQUEST_RENAME_FEATURE',
   DELETE_NODE: 'DELETE_NODE',
   DELETE_FEATURE: 'DELETE_FEATURE',
   UPDATE_FEATURES: 'UPDATE_FEATURES',
   ADD_NODES: 'ADD_NODES',
   CHANGE_NODE_VISIBLE: 'CHANGE_NODE_VISIBLE',
   FOCUS: 'FOCUS',
+  DELETE_ITEM: 'DELETE_ITEM',
 };
 
 export default class App extends CustomElement {
@@ -61,6 +64,8 @@ export default class App extends CustomElement {
     this.onDeleteNode();
     this.onAddNodes();
     this.onFocus();
+    this.onDeleteItem();
+    this.onRequestRenameFeature();
   }
 
   attributeChangedCallback(
@@ -204,15 +209,14 @@ export default class App extends CustomElement {
   onRenameFeature() {
     this.addEventListener(APP_EVENTS.RENAME_FEATURE, ((e: CustomEvent) => {
       const { detail } = e;
-      if (detail.type === 'FEATURE') {
-        this.features = this.features.map((feature) => {
-          if (feature.id == detail.id) {
-            return { ...feature, name: detail.name };
-          } else {
-            return feature;
-          }
-        });
-      }
+
+      this.features = this.features.map((feature) => {
+        if (feature.id === detail.id) {
+          return { ...feature, name: detail.name };
+        } else {
+          return feature;
+        }
+      });
     }) as EventListener);
   }
 
@@ -233,6 +237,35 @@ export default class App extends CustomElement {
           return feature;
         }
       });
+    }) as EventListener);
+  }
+
+  onDeleteItem() {
+    this.addEventListener(APP_EVENTS.DELETE_ITEM, (() => {
+      if (!this.focused?.id) return;
+      const eventName =
+        this.focused.type === 'NODE'
+          ? APP_EVENTS.DELETE_NODE
+          : APP_EVENTS.DELETE_FEATURE;
+
+      this.dispatchEvent(
+        new CustomEvent(eventName, {
+          detail: { id: this.focused.id },
+        })
+      );
+    }) as EventListener);
+  }
+
+  onRequestRenameFeature() {
+    this.addEventListener(APP_EVENTS.REQUEST_RENAME_FEATURE, (() => {
+      if (!this.focused?.id) return;
+
+      if (this.focused.id && this.focused.type === 'FEATURE') {
+        this.shadowRoot
+          ?.querySelector(`${CONTAINER_TAG_NAME}[id="${this.focused.id}"]`)
+          ?.querySelector(ROW_TAG_NAME)
+          ?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
+      }
     }) as EventListener);
   }
 }

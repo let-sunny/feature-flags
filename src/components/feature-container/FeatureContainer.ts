@@ -8,7 +8,7 @@ import { Feature } from '../types';
 import { createFeatureRow, createNodeRow } from '../row/Row';
 import { getAppElement, APP_EVENTS } from '../app/App';
 
-type Attribute = 'items' | 'visible' | 'focused';
+type Attribute = 'items' | 'visible' | 'focused' | 'name';
 
 export const CONTAINER_TAG_NAME = 'feature-flags-container';
 
@@ -16,7 +16,7 @@ export default class FeatureContainer extends CustomElement {
   focused: Focused | null;
 
   static get observedAttributes(): Attribute[] {
-    return ['items', 'visible', 'focused'];
+    return ['items', 'visible', 'focused', 'name'];
   }
 
   constructor() {
@@ -61,6 +61,10 @@ export default class FeatureContainer extends CustomElement {
     newValue: string
   ) {
     switch (attribute) {
+      case 'name': {
+        this.querySelector(ROW_TAG_NAME)?.setAttribute('name', newValue);
+        break;
+      }
       case 'visible':
       case 'items': {
         const container = this.shadowRoot?.querySelector('.content');
@@ -200,6 +204,7 @@ export const updateFeatureContainer = (
   feature: Feature
 ) => {
   element?.setAttribute('items', JSON.stringify(feature.items));
+  element?.setAttribute('name', feature.name);
   element?.setAttribute('visible', JSON.stringify(feature.visible));
   element?.setAttribute('focused', JSON.stringify(feature.focused || '{}'));
 };

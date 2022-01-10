@@ -26,6 +26,7 @@ class UIEventHandler {
     this.onContextMenu();
     this.onRequestChangeNodeVisible();
     this.onRequestUpdatedFeatures();
+    this.onKeyPressed();
   }
 
   onMessageFromFigma() {
@@ -96,6 +97,18 @@ class UIEventHandler {
       if (closed) {
         getContextMenu()?.dispatchEvent(
           new CustomEvent(EVENTS.CLOSE_CONTEXT_MENU)
+        );
+      }
+    });
+  }
+
+  onKeyPressed() {
+    document.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        getAppElement()?.dispatchEvent(new CustomEvent(APP_EVENTS.DELETE_ITEM));
+      } else if (event.key.toUpperCase() === 'R') {
+        getAppElement()?.dispatchEvent(
+          new CustomEvent(APP_EVENTS.REQUEST_RENAME_FEATURE)
         );
       }
     });

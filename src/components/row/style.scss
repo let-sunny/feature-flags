@@ -75,7 +75,7 @@ $nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 12px 0;
+  min-height: 38px;
 }
 
 .content {
@@ -98,6 +98,20 @@ $nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
   .name {
     font-size: 1rem;
     margin: 0;
+  }
+
+  .input,
+  .input:focus,
+  .input:focus-visible {
+    border: 2px solid #309dda;
+    border-radius: 1px;
+    outline: none;
+    box-sizing: border-box;
+    height: 26px;
+    font-size: 1rem;
+    color: var(--black);
+    position: absolute;
+    display: none;
   }
 }
 
