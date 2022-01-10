@@ -4,7 +4,11 @@ import Style from './style.scss';
 
 import { Feature } from '../types';
 import { CONTEXT_MENU_TAG_NAME } from './../context-menu/ContextMenu';
-import { createFeatureContainer } from '../feature-container/FeatureContainer';
+import {
+  CONTAINER_TAG_NAME,
+  createFeatureContainer,
+  updateFeatureContainer,
+} from '../feature-container/FeatureContainer';
 
 type Attribute = 'features' | 'selected' | 'selection';
 
@@ -61,13 +65,48 @@ export default class App extends CustomElement {
     switch (attribute) {
       case 'features': {
         onUpdateFeature(this.features);
-        this.updateFeatureCount();
-        const container = this.shadowRoot?.querySelector('section');
-        const features = JSON.parse(newValue) as Feature[];
-        const featureElements = features.map((feature) => {
-          return createFeatureContainer(feature);
+
+        requestAnimationFrame(() => {
+          this.updateFeatureCount();
+          const container = this.shadowRoot?.querySelector('section');
+
+          // compare old and new features
+          const newFeatures = JSON.parse(newValue) as Feature[];
+          const oldFeatures = (JSON.parse(oldValue) || []) as Feature[];
+
+          // case 1. features only has old features
+          const deletedFeatures = oldFeatures.filter(
+            (feature) =>
+              !newFeatures.find((newFeature) => newFeature.id === feature.id)
+          );
+          deletedFeatures.forEach((feature) => {
+            this.shadowRoot
+              ?.querySelector(`${CONTAINER_TAG_NAME}[id="${feature.id}"]`)
+              ?.remove();
+          });
+
+          // case 2. features has both old and new features
+          const updatedFeatures = newFeatures.filter((feature) =>
+            oldFeatures.find((oldFeature) => oldFeature.id === feature.id)
+          );
+          updatedFeatures.forEach((feature) => {
+            const featureContainer = this.shadowRoot?.querySelector(
+              `${CONTAINER_TAG_NAME}[id="${feature.id}"]`
+            ) as HTMLElement;
+            if (featureContainer) {
+              updateFeatureContainer(featureContainer, feature);
+            }
+          });
+
+          // case 3. features only has new features
+          const addedFeatures = newFeatures.filter(
+            (feature) =>
+              !oldFeatures.find((oldFeature) => oldFeature.id === feature.id)
+          );
+          addedFeatures.forEach((feature) => {
+            container?.appendChild(createFeatureContainer(feature));
+          });
         });
-        container?.replaceChildren(...featureElements);
         break;
       }
       default:

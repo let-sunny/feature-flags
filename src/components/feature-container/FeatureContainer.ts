@@ -1,3 +1,4 @@
+import { ROW_TAG_NAME } from './../row/Row';
 import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
@@ -59,6 +60,10 @@ export default class FeatureContainer extends CustomElement {
             ? (JSON.parse(newValue) as Feature['items'])
             : this.items;
 
+        if (attribute === 'visible') {
+          this.querySelector(ROW_TAG_NAME)?.setAttribute('visible', newValue);
+        }
+
         const childrenElements = items.map((item) => {
           switch (item.type) {
             case 'FEATURE':
@@ -75,6 +80,7 @@ export default class FeatureContainer extends CustomElement {
               throw new Error('Unknown child type');
           }
         });
+
         container?.replaceChildren(...childrenElements);
         break;
       }
@@ -110,6 +116,14 @@ export const createFeatureContainer = (feature: Feature) => {
   const featureRow = createFeatureRow(feature);
   element.appendChild(featureRow);
   return element;
+};
+
+export const updateFeatureContainer = (
+  element: HTMLElement,
+  feature: Feature
+) => {
+  element?.setAttribute('items', JSON.stringify(feature.items));
+  element?.setAttribute('visible', JSON.stringify(feature.visible));
 };
 
 const onAddNodes = (featureId: string) => {
