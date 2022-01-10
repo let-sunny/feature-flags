@@ -4,7 +4,7 @@ import Template from './template.html';
 import { Feature, Node } from '../types';
 import { APP_EVENTS, getAppElement } from '../app/App';
 
-type Attribute = 'type' | 'id' | 'name' | 'editable' | 'visible' | 'node-type';
+type Attribute = 'type' | 'id' | 'name' | 'visible' | 'node-type';
 
 export const ROW_TAG_NAME = 'feature-flags-row';
 export const ROW_EVENTS = {

@@ -13,7 +13,7 @@ type Attribute = 'items' | 'visible' | 'focused' | 'name';
 export const CONTAINER_TAG_NAME = 'feature-flags-container';
 
 export default class FeatureContainer extends CustomElement {
-  focused: Focused | null;
+  focused: Focused;
 
   static get observedAttributes(): Attribute[] {
     return ['items', 'visible', 'focused', 'name'];
@@ -21,7 +21,7 @@ export default class FeatureContainer extends CustomElement {
 
   constructor() {
     super(Template, Style);
-    this.focused = null;
+    this.focused = {};
   }
 
   get closed() {
@@ -42,6 +42,7 @@ export default class FeatureContainer extends CustomElement {
 
   connectedCallback() {
     this.closed = true;
+
     this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
       this.closed = !this.closed;
     });
@@ -137,7 +138,7 @@ export default class FeatureContainer extends CustomElement {
               ?.querySelector('.header')
               ?.classList.remove('focused');
           } else {
-            this.focused = null;
+            this.focused = {};
             // remove focused style
             this.shadowRoot
               ?.querySelector('.header')

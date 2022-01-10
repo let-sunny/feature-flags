@@ -31,6 +31,7 @@ export default class ContextMenu extends CustomElement {
     });
   }
 
+  // event handlers
   onOpen() {
     this.addEventListener(EVENTS.OPEN_CONTEXT_MENU, (({
       detail: event,
@@ -62,7 +63,6 @@ export default class ContextMenu extends CustomElement {
     }) as EventListener);
   }
 
-  // event handlers
   onClose() {
     this.addEventListener(EVENTS.CLOSE_CONTEXT_MENU, (() => {
       this.close();

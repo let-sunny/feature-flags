@@ -6,7 +6,7 @@
   "scripts": {
     "run": "npx webpack --mode=development --watch",
     "build": "npx webpack --mode=production",
-    "test": "jest",
+    "test": "jest --maxWorkers=1",
     "prepare": "husky install"
   },
   "author": {
@@ -33,6 +33,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "file-loader": "^6.2.0",
     "html-loader": "^3.1.0",
+    "html-loader-jest": "^0.2.1",
     "html-webpack-inline-source-plugin": "^1.0.0-beta.2",
     "html-webpack-plugin": "^5.5.0",
     "husky": "^7.0.4",
