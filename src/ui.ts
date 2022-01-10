@@ -27,6 +27,7 @@ class UIEventHandler {
     this.onRequestChangeNodeVisible();
     this.onRequestUpdatedFeatures();
     this.onKeyPressed();
+    this.onRequestSync();
   }
 
   onMessageFromFigma() {
@@ -37,6 +38,14 @@ class UIEventHandler {
           const app = document.createElement(APP_TAG_NAME);
           app.setAttribute('features', JSON.stringify(value.features));
           document.querySelector('#ui')?.appendChild(app);
+          break;
+        }
+        case 'UPDATE_FEATURES': {
+          getAppElement()?.dispatchEvent(
+            new CustomEvent(APP_EVENTS.RELOAD_FEATURES, {
+              detail: { features: value.features },
+            })
+          );
           break;
         }
         case 'UPDATE_SELECTION': {
@@ -115,13 +124,13 @@ class UIEventHandler {
   }
 
   onRequestChangeNodeVisible() {
-    document.addEventListener(APP_EVENTS.CHANGE_NODE_VISIBLE, ((
+    document.addEventListener(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, ((
       event: CustomEvent
     ) => {
       parent.postMessage(
         {
           pluginMessage: {
-            type: APP_EVENTS.CHANGE_NODE_VISIBLE,
+            type: APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE,
             nodes: event.detail.nodes,
             visible: event.detail.visible,
           },
@@ -132,14 +141,27 @@ class UIEventHandler {
   }
 
   onRequestUpdatedFeatures() {
-    document.addEventListener(APP_EVENTS.UPDATE_FEATURES, ((
+    document.addEventListener(APP_EVENTS.REQUEST_UPDATE_FEATURES, ((
       event: CustomEvent
     ) => {
       parent.postMessage(
         {
           pluginMessage: {
-            type: APP_EVENTS.UPDATE_FEATURES,
+            type: APP_EVENTS.REQUEST_UPDATE_FEATURES,
             features: event.detail.features,
+          },
+        },
+        '*'
+      );
+    }) as EventListener);
+  }
+
+  onRequestSync() {
+    document.addEventListener(APP_EVENTS.REQUEST_SYNC_FEATURES, (() => {
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: APP_EVENTS.REQUEST_SYNC_FEATURES,
           },
         },
         '*'

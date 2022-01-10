@@ -20,11 +20,13 @@ export const APP_EVENTS = {
   REQUEST_RENAME_FEATURE: 'REQUEST_RENAME_FEATURE',
   DELETE_NODE: 'DELETE_NODE',
   DELETE_FEATURE: 'DELETE_FEATURE',
-  UPDATE_FEATURES: 'UPDATE_FEATURES',
+  REQUEST_UPDATE_FEATURES: 'REQUEST_UPDATE_FEATURES',
   ADD_NODES: 'ADD_NODES',
-  CHANGE_NODE_VISIBLE: 'CHANGE_NODE_VISIBLE',
   FOCUS: 'FOCUS',
   DELETE_ITEM: 'DELETE_ITEM',
+  RELOAD_FEATURES: 'RELOAD_FEATURES',
+  REQUEST_CHANGE_NODE_VISIBLE: 'REQUEST_CHANGE_NODE_VISIBLE',
+  REQUEST_SYNC_FEATURES: 'REQUEST_SYNC_FEATURES',
 };
 
 export default class App extends CustomElement {
@@ -58,6 +60,7 @@ export default class App extends CustomElement {
     this.index = this.features.length + 1;
 
     this.onCreateFeature();
+    this.onSyncFeatures();
     this.onDeleteFeature();
     this.onRenameFeature();
     this.onChangeFeatureVisible();
@@ -66,6 +69,7 @@ export default class App extends CustomElement {
     this.onFocus();
     this.onDeleteItem();
     this.onRequestRenameFeature();
+    this.onReloadFeatures();
   }
 
   attributeChangedCallback(
@@ -197,6 +201,12 @@ export default class App extends CustomElement {
       });
   }
 
+  onSyncFeatures() {
+    this.shadowRoot?.querySelector('#sync')?.addEventListener('click', () => {
+      requestSyncFeatures();
+    });
+  }
+
   onDeleteFeature() {
     this.addEventListener(APP_EVENTS.DELETE_FEATURE, ((e: CustomEvent) => {
       const { detail } = e;
@@ -268,6 +278,12 @@ export default class App extends CustomElement {
       }
     }) as EventListener);
   }
+
+  onReloadFeatures() {
+    this.addEventListener(APP_EVENTS.RELOAD_FEATURES, ((event: CustomEvent) => {
+      this.features = event.detail.features;
+    }) as EventListener);
+  }
 }
 
 export const getAppElement = () => {
@@ -291,7 +307,7 @@ const getNewFeature = (index: number): Feature => {
 
 const onUpdateFeature = (features: Feature[]) => {
   document.dispatchEvent(
-    new CustomEvent(APP_EVENTS.UPDATE_FEATURES, {
+    new CustomEvent(APP_EVENTS.REQUEST_UPDATE_FEATURES, {
       detail: {
         features,
       },
@@ -301,11 +317,15 @@ const onUpdateFeature = (features: Feature[]) => {
 
 const syncNodeVisible = (feature: Feature) => {
   document.dispatchEvent(
-    new CustomEvent(APP_EVENTS.CHANGE_NODE_VISIBLE, {
+    new CustomEvent(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, {
       detail: {
         nodes: feature.items.filter((item) => item.type === 'NODE'),
         visible: feature.visible,
       },
     })
   );
+};
+
+const requestSyncFeatures = () => {
+  document.dispatchEvent(new CustomEvent(APP_EVENTS.REQUEST_SYNC_FEATURES));
 };
