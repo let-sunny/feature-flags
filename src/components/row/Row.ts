@@ -3,7 +3,6 @@ import Style from './style.scss';
 import Template from './template.html';
 
 import { APP_EVENTS } from '../app/App';
-import { getAppElement } from '../helper';
 
 type Attribute = 'type' | 'id' | 'name' | 'visible' | 'node-type';
 
@@ -58,7 +57,7 @@ export default class Row extends CustomElement {
       requestAnimationFrame(() => {
         input.style.display = 'none';
       });
-      onRename(this.id, input.value);
+      this.requestRenameFeature(this.id, input.value);
     });
     input.addEventListener('keydown', (event) => {
       event.stopPropagation();
@@ -75,15 +74,17 @@ export default class Row extends CustomElement {
       });
     }) as EventListener);
   }
-}
 
-const onRename = (id: string, name: string) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.RENAME_FEATURE, {
-      detail: {
-        id,
-        name: name.trim(),
-      },
-    })
-  );
-};
+  // dispatch events
+  requestRenameFeature = (id: string, name: string) => {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.RENAME_FEATURE, {
+        detail: {
+          id,
+          name: name.trim(),
+        },
+        composed: true,
+      })
+    );
+  };
+}

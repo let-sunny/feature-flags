@@ -4,7 +4,6 @@ import Template from './template.html';
 import { ROW_TAG_NAME, ROW_EVENTS } from '../row/Row';
 import { APP_EVENTS } from '../app/App';
 import { ItemType } from '../types';
-import { getAppElement } from '../helper';
 
 export const CONTEXT_MENU_TAG_NAME = 'feature-flags-context-menu';
 export const CONTEXT_MENU_EVENTS = {
@@ -15,7 +14,6 @@ export default class ContextMenu extends CustomElement {
   target: HTMLElement | null;
   constructor() {
     super(Template, Style);
-
     this.target = null;
   }
 
@@ -72,7 +70,7 @@ export default class ContextMenu extends CustomElement {
 
   onRequestRename() {
     this.shadowRoot?.querySelector('#rename')?.addEventListener('click', () => {
-      onRenameFeature(this.target);
+      this.target?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
       this.close();
     });
   }
@@ -82,25 +80,23 @@ export default class ContextMenu extends CustomElement {
       const type = this.target?.getAttribute('type') as ItemType;
       const targetId = this.target?.getAttribute('id');
       if (type && targetId) {
-        onDeleteFeatureChild(type, targetId);
+        this.requestDeleteFeatureChild(type, targetId);
       }
       this.close();
     });
   }
+
+  // dispatch events
+  requestDeleteFeatureChild(type: ItemType, id: string) {
+    const eventName =
+      type === 'FEATURE' ? APP_EVENTS.DELETE_FEATURE : APP_EVENTS.DELETE_NODE;
+    this.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: {
+          id,
+        },
+        composed: true,
+      })
+    );
+  }
 }
-
-const onRenameFeature = (featureElement: HTMLElement | null) => {
-  featureElement?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
-};
-
-const onDeleteFeatureChild = (type: ItemType, id: string) => {
-  const eventName =
-    type === 'FEATURE' ? APP_EVENTS.DELETE_FEATURE : APP_EVENTS.DELETE_NODE;
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(eventName, {
-      detail: {
-        id,
-      },
-    })
-  );
-};

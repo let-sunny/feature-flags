@@ -80,7 +80,7 @@ export default class App extends CustomElement {
   ) {
     switch (attribute) {
       case 'features': {
-        onUpdateFeature(this.features);
+        this.requestUpdateFeature(this.features);
 
         requestAnimationFrame(() => {
           this.updateFeatureCount();
@@ -191,7 +191,7 @@ export default class App extends CustomElement {
               ),
             ],
           };
-          syncNodeVisible(newFeature);
+          this.requestSyncNodeVisible(newFeature);
           return newFeature;
         } else {
           return feature;
@@ -211,7 +211,7 @@ export default class App extends CustomElement {
 
   onSyncFeatures() {
     this.shadowRoot?.querySelector('#sync')?.addEventListener('click', () => {
-      requestSyncFeatures();
+      this.requestSyncFeatures();
     });
   }
 
@@ -249,7 +249,7 @@ export default class App extends CustomElement {
       this.features = this.features.map((feature) => {
         if (feature.id == detail.id) {
           const newFeature = { ...feature, visible: detail.visible };
-          syncNodeVisible(newFeature);
+          this.requestSyncNodeVisible(newFeature);
           return newFeature;
         } else {
           return feature;
@@ -292,30 +292,36 @@ export default class App extends CustomElement {
       this.features = event.detail.features;
     }) as EventListener);
   }
+
+  // dispatch events
+  requestUpdateFeature(features: Feature[]) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.REQUEST_UPDATE_FEATURES, {
+        detail: {
+          features,
+        },
+        composed: true,
+      })
+    );
+  }
+
+  requestSyncNodeVisible(feature: Feature) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, {
+        detail: {
+          nodes: feature.items.filter((item) => item.type === 'NODE'),
+          visible: feature.visible,
+        },
+        composed: true,
+      })
+    );
+  }
+
+  requestSyncFeatures() {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.REQUEST_SYNC_FEATURES, {
+        composed: true,
+      })
+    );
+  }
 }
-
-// TODO: bubble로 처리할지 고민..
-const onUpdateFeature = (features: Feature[]) => {
-  document.dispatchEvent(
-    new CustomEvent(APP_EVENTS.REQUEST_UPDATE_FEATURES, {
-      detail: {
-        features,
-      },
-    })
-  );
-};
-
-const syncNodeVisible = (feature: Feature) => {
-  document.dispatchEvent(
-    new CustomEvent(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, {
-      detail: {
-        nodes: feature.items.filter((item) => item.type === 'NODE'),
-        visible: feature.visible,
-      },
-    })
-  );
-};
-
-const requestSyncFeatures = () => {
-  document.dispatchEvent(new CustomEvent(APP_EVENTS.REQUEST_SYNC_FEATURES));
-};

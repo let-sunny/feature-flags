@@ -6,11 +6,7 @@ import Template from './template.html';
 
 import { Feature } from '../types';
 import { APP_EVENTS } from '../app/App';
-import {
-  createFeatureContainer,
-  createNodeRow,
-  getAppElement,
-} from '../helper';
+import { createFeatureContainer, createNodeRow } from '../helper';
 
 type Attribute = 'items' | 'visible' | 'focused' | 'name';
 
@@ -164,7 +160,7 @@ export default class FeatureContainer extends CustomElement {
     this.shadowRoot
       ?.querySelector('#toggle-visible')
       ?.addEventListener('click', () => {
-        onToggleVisible(this.id, !this.visible);
+        this.requestToggleVisible(this.id, !this.visible);
       });
   }
 
@@ -172,7 +168,7 @@ export default class FeatureContainer extends CustomElement {
     this.shadowRoot
       ?.querySelector('#add-node')
       ?.addEventListener('click', () => {
-        onAddNodes(this.id);
+        this.requestAddNodes(this.id);
       });
   }
 
@@ -187,33 +183,37 @@ export default class FeatureContainer extends CustomElement {
             type: element.getAttribute('type') as ItemType,
           };
 
-          onFocus(this.focused);
+          this.requestFocus(this.focused);
         }
       });
     });
   }
+
+  // dispatch events
+  requestAddNodes(featureId: string) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.ADD_NODES, {
+        detail: { featureId },
+        composed: true,
+      })
+    );
+  }
+
+  requestToggleVisible(featureId: string, visible: boolean) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
+        detail: { id: featureId, visible },
+        composed: true,
+      })
+    );
+  }
+
+  requestFocus(focused: Focused) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.FOCUS, {
+        detail: focused,
+        composed: true,
+      })
+    );
+  }
 }
-
-const onAddNodes = (featureId: string) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.ADD_NODES, {
-      detail: { featureId },
-    })
-  );
-};
-
-const onToggleVisible = (featureId: string, visible: boolean) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
-      detail: { id: featureId, visible },
-    })
-  );
-};
-
-const onFocus = (focused: Focused) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.FOCUS, {
-      detail: focused,
-    })
-  );
-};
