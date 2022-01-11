@@ -1,5 +1,5 @@
 import App, { APP_TAG_NAME, APP_EVENTS } from './app/App';
-import Row, { ROW_TAG_NAME } from './row/Row';
+import Row, { ROW_EVENTS, ROW_TAG_NAME } from './row/Row';
 import FeatureContainer, {
   CONTAINER_TAG_NAME,
 } from './feature-container/FeatureContainer';
@@ -19,6 +19,7 @@ export const TAG_NAMES = {
 export const EVENTS = {
   ...APP_EVENTS,
   ...CONTEXT_MENU_EVENTS,
+  ...ROW_EVENTS,
 };
 
 export const helper = componentHelper;

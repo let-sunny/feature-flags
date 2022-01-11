@@ -63,7 +63,7 @@
 }
 
 // figma node types
-$nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
+$nodes: 'FRAME', 'HORIZONTAL', 'VERTICAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
   'GROUP', 'VECTOR', 'TEXT', 'ELLIPSE', 'POLYGON', 'STAR', 'LINE', 'RECTANGLE';
 @each $node in $nodes {
   :host([node-type='#{$node}']) {
