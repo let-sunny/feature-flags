@@ -16,6 +16,10 @@ export default class Row extends CustomElement {
     return ['name'];
   }
 
+  get name() {
+    return this.getAttribute('name') || '';
+  }
+
   constructor() {
     super(Template, Style);
   }
@@ -65,6 +69,7 @@ export default class Row extends CustomElement {
     this.addEventListener(ROW_EVENTS.REQUEST_RENAME, (() => {
       requestAnimationFrame(() => {
         input.style.display = 'block';
+        input.value = this.name;
         input.focus();
       });
     }) as EventListener);
