@@ -1,0 +1,122 @@
+@mixin container-color($color) {
+  .container > *,
+  .container .icon > .colored {
+    color: $color;
+    fill: $color;
+  }
+}
+
+@mixin node-type-icon($type) {
+  .icon {
+    @if ($type == 'FRAME') {
+      &.frame {
+        display: block;
+      }
+    } @else if $type == 'GROUP' {
+      &.group {
+        display: block;
+      }
+    } @else if $type == 'HORIZONTAL' {
+      &.auto-layout {
+        display: block;
+      }
+    } @else if $type == 'VERTICAL' {
+      &.auto-layout {
+        display: block;
+        transform: rotate(90deg);
+      }
+    } @else if $type == 'COMPONENT' {
+      &.component {
+        display: block;
+      }
+    } @else if $type == 'INSTANCE' {
+      &.instance {
+        display: block;
+      }
+    } @else if $type == 'TEXT' {
+      &.text {
+        display: block;
+      }
+    } @else {
+      &.image {
+        display: block;
+      }
+    }
+  }
+}
+
+:host {
+  @include container-color(var(--gray));
+}
+
+:host([visible='true']) {
+  @include container-color(var(--black));
+}
+:host([type='NODE']) {
+  .content .node-type {
+    display: block;
+
+    & + .name {
+      padding-left: 8px;
+    }
+  }
+}
+
+// figma node types
+$nodes: 'FRAME', 'HORIZONTAL', 'HORIZONTAL', 'COMPONENT', 'INSTANCE', 'IMAGE',
+  'GROUP', 'VECTOR', 'TEXT', 'ELLIPSE', 'POLYGON', 'STAR', 'LINE', 'RECTANGLE';
+@each $node in $nodes {
+  :host([node-type='#{$node}']) {
+    @include node-type-icon($node);
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 38px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  .node-type {
+    display: none;
+    width: var(--icon-size, 1rem);
+    height: var(--icon-size, 1rem);
+    position: relative;
+    .icon {
+      position: absolute;
+      display: none;
+    }
+  }
+
+  .name {
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .input,
+  .input:focus,
+  .input:focus-visible {
+    border: 2px solid #309dda;
+    border-radius: 1px;
+    outline: none;
+    box-sizing: border-box;
+    height: 26px;
+    font-size: 1rem;
+    color: var(--black);
+    position: absolute;
+    display: none;
+  }
+}
+
+.controls {
+  .add {
+    margin-right: 12px;
+  }
+}

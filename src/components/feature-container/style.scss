@@ -1,0 +1,110 @@
+@mixin visibility-icon($visible) {
+  .icon {
+    @if $visible {
+      &.visible {
+        display: block;
+      }
+      &.hidden {
+        display: none;
+      }
+    } @else {
+      &.hidden {
+        display: block;
+      }
+      &.visible {
+        display: none;
+      }
+    }
+  }
+}
+
+:host {
+  @include visibility-icon(false);
+}
+:host([visible='true']) {
+  @include visibility-icon(true);
+}
+
+:host([closed='true']) {
+  .header .toggle {
+    transform: rotate(0deg);
+  }
+  .content {
+    display: none;
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: relative;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 14px;
+
+  .toggle {
+    width: var(--icon-size, 1rem);
+    height: var(--icon-size, 1rem);
+    transform: rotate(90deg);
+    .colored {
+      fill: var(--gray);
+    }
+  }
+
+  .header-content {
+    flex: 1;
+    padding-left: 8px;
+  }
+
+  .controls {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 14px;
+
+    #add-node {
+      margin-right: 12px;
+    }
+
+    .icon {
+      &.visible {
+        fill: var(--black);
+      }
+      &.hidden {
+        fill: var(--gray);
+      }
+    }
+  }
+}
+
+.content {
+  display: block;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  .item {
+    padding-left: 58px;
+    list-style: none;
+  }
+}
+
+.header.focused,
+.item.focused {
+  background-color: var(--key-color);
+}
+
+.header.focused + .content {
+  background-color: var(--sub-color);
+}
