@@ -5,8 +5,8 @@ import Style from './style.scss';
 import Template from './template.html';
 
 import { Feature } from '../types';
-import { createFeatureRow, createNodeRow } from '../row/Row';
-import { getAppElement, APP_EVENTS } from '../app/App';
+import { APP_EVENTS } from '../app/App';
+import { createFeatureContainer, createNodeRow } from '../helper';
 
 type Attribute = 'items' | 'visible' | 'focused' | 'name';
 
@@ -43,17 +43,10 @@ export default class FeatureContainer extends CustomElement {
   connectedCallback() {
     this.closed = true;
 
-    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
-      this.closed = !this.closed;
-    });
-
+    this.onToggle();
     this.onRequestToggleVisible();
     this.onRequestAddNodes();
-
-    const header = this.shadowRoot?.querySelector(
-      '.header-content'
-    ) as HTMLElement;
-    this.onRequestFocus(header);
+    this.onRequestFocus(this.shadowRoot?.querySelector('.header-content'));
   }
 
   attributeChangedCallback(
@@ -133,7 +126,6 @@ export default class FeatureContainer extends CustomElement {
             this.shadowRoot
               ?.getElementById(`${newFocused.id}`)
               ?.classList.add('focused');
-
             this.shadowRoot
               ?.querySelector('.header')
               ?.classList.remove('focused');
@@ -156,11 +148,17 @@ export default class FeatureContainer extends CustomElement {
   }
 
   // event handlers
+  onToggle() {
+    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
+      this.closed = !this.closed;
+    });
+  }
+
   onRequestToggleVisible() {
     this.shadowRoot
       ?.querySelector('#toggle-visible')
       ?.addEventListener('click', () => {
-        onToggleVisible(this.id, !this.visible);
+        this.requestToggleVisible(this.id, !this.visible);
       });
   }
 
@@ -168,12 +166,14 @@ export default class FeatureContainer extends CustomElement {
     this.shadowRoot
       ?.querySelector('#add-node')
       ?.addEventListener('click', () => {
-        onAddNodes(this.id);
+        this.requestAddNodes(this.id);
       });
   }
 
   onRequestFocus(elem?: HTMLElement | null) {
     elem?.addEventListener('click', (event) => {
+      console.log('hre');
+
       event.composedPath().find((target) => {
         const element = target as HTMLElement;
         if (element.tagName === ROW_TAG_NAME.toUpperCase()) {
@@ -183,53 +183,37 @@ export default class FeatureContainer extends CustomElement {
             type: element.getAttribute('type') as ItemType,
           };
 
-          onFocus(this.focused);
+          this.requestFocus(this.focused);
         }
       });
     });
   }
+
+  // dispatch events
+  requestAddNodes(featureId: string) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.ADD_NODES, {
+        detail: { featureId },
+        composed: true,
+      })
+    );
+  }
+
+  requestToggleVisible(featureId: string, visible: boolean) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
+        detail: { id: featureId, visible },
+        composed: true,
+      })
+    );
+  }
+
+  requestFocus(focused: Focused) {
+    this.dispatchEvent(
+      new CustomEvent(APP_EVENTS.FOCUS, {
+        detail: focused,
+        composed: true,
+      })
+    );
+  }
 }
-
-export const createFeatureContainer = (feature: Feature) => {
-  const element = document.createElement(CONTAINER_TAG_NAME);
-  element.setAttribute('id', feature.id);
-  updateFeatureContainer(element, feature);
-
-  const featureRow = createFeatureRow(feature);
-  element.appendChild(featureRow);
-  return element;
-};
-
-export const updateFeatureContainer = (
-  element: HTMLElement,
-  feature: Feature
-) => {
-  element?.setAttribute('items', JSON.stringify(feature.items));
-  element?.setAttribute('name', feature.name);
-  element?.setAttribute('visible', JSON.stringify(feature.visible));
-  element?.setAttribute('focused', JSON.stringify(feature.focused || '{}'));
-};
-
-const onAddNodes = (featureId: string) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.ADD_NODES, {
-      detail: { featureId },
-    })
-  );
-};
-
-const onToggleVisible = (featureId: string, visible: boolean) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
-      detail: { id: featureId, visible },
-    })
-  );
-};
-
-const onFocus = (focused: Focused) => {
-  getAppElement()?.dispatchEvent(
-    new CustomEvent(APP_EVENTS.FOCUS, {
-      detail: focused,
-    })
-  );
-};
