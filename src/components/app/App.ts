@@ -23,7 +23,8 @@ export const APP_EVENTS = {
   ADD_NODES: 'ADD_NODES',
   FOCUS: 'FOCUS',
   DELETE_ITEM: 'DELETE_ITEM',
-  RELOAD_FEATURES: 'RELOAD_FEATURES',
+  SET_FEATURES: 'SET_FEATURES',
+  SET_SELECTION_NODES: 'SET_SELECTION_NODES',
   // document events
   REQUEST_UPDATE_FEATURES: 'REQUEST_UPDATE_FEATURES',
   REQUEST_CHANGE_NODE_VISIBLE: 'REQUEST_CHANGE_NODE_VISIBLE',
@@ -48,6 +49,10 @@ export default class App extends CustomElement {
     return JSON.parse(this.getAttribute('selection') || '[]');
   }
 
+  set selectionNodesFromFigmaPage(nodes: Node[]) {
+    this.setAttribute('selection', JSON.stringify(nodes));
+  }
+
   get focused() {
     return JSON.parse(this.getAttribute('focused') || 'null') as Focused;
   }
@@ -61,16 +66,17 @@ export default class App extends CustomElement {
     this.index = this.features.length + 1;
 
     this.onCreateFeature();
-    this.onSyncFeatures();
+    this.onSyncFeatures(); // sync features from figma page
     this.onDeleteFeature();
-    this.onRenameFeature();
     this.onChangeFeatureVisible();
     this.onDeleteNode();
     this.onAddNodes();
     this.onFocus();
-    this.onDeleteItem();
-    this.onRequestRenameFeature();
-    this.onReloadFeatures();
+    this.onDeleteItem(); // delete feature or node
+    this.onRenameFeature(); // set name
+    this.onRequestRenameFeature(); // request to display input for name
+    this.onSetFeatures();
+    this.onSetSelectionNodes(); // set selection nodes from figma page
   }
 
   attributeChangedCallback(
@@ -154,6 +160,13 @@ export default class App extends CustomElement {
   }
 
   // event handlers
+  onSetSelectionNodes() {
+    this.addEventListener(APP_EVENTS.SET_SELECTION_NODES, ((e: CustomEvent) => {
+      const { detail } = e;
+      this.selectionNodesFromFigmaPage = detail.nodes;
+    }) as EventListener);
+  }
+
   onFocus() {
     this.addEventListener(APP_EVENTS.FOCUS, ((e: CustomEvent) => {
       const { detail } = e;
@@ -287,8 +300,8 @@ export default class App extends CustomElement {
     }) as EventListener);
   }
 
-  onReloadFeatures() {
-    this.addEventListener(APP_EVENTS.RELOAD_FEATURES, ((event: CustomEvent) => {
+  onSetFeatures() {
+    this.addEventListener(APP_EVENTS.SET_FEATURES, ((event: CustomEvent) => {
       this.features = event.detail.features;
     }) as EventListener);
   }

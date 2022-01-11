@@ -31,14 +31,18 @@ export class UIEventHandler {
       switch (type) {
         case 'UPDATE_FEATURES': {
           this.app.dispatchEvent(
-            new CustomEvent(EVENTS.RELOAD_FEATURES, {
+            new CustomEvent(EVENTS.SET_FEATURES, {
               detail: { features: value.features },
             })
           );
           break;
         }
         case 'UPDATE_SELECTION': {
-          this.app.setAttribute('selection', JSON.stringify(value.nodes));
+          this.app.dispatchEvent(
+            new CustomEvent(EVENTS.SET_SELECTION_NODES, {
+              detail: { nodes: value.nodes },
+            })
+          );
           break;
         }
         default:
