@@ -1,9 +1,7 @@
-const sendFeatures = (
-  features: any,
-  type: 'INIT_FEATURES' | 'UPDATE_FEATURES'
-) => {
+// TODO: type
+const sendFeatures = (features: any) => {
   figma.ui.postMessage({
-    type,
+    type: 'UPDATE_FEATURES',
     value: { features },
   });
 };
@@ -38,7 +36,7 @@ figma.ui.onmessage = async (msg) => {
             .map(buildFeatureNode),
         })
       );
-      sendFeatures(updatedFeatures, 'UPDATE_FEATURES');
+      sendFeatures(updatedFeatures);
       break;
     }
     case 'REQUEST_CHANGE_NODE_VISIBLE': {
@@ -79,5 +77,5 @@ figma.on('selectionchange', () => {
 
 (async () => {
   const features = (await figma.clientStorage.getAsync('features')) || [];
-  sendFeatures(features, 'INIT_FEATURES');
+  sendFeatures(features);
 })();

@@ -4,12 +4,12 @@ import Template from './template.html';
 import Style from './style.scss';
 
 import { Feature, Node, Focused } from '../types';
-import { CONTEXT_MENU_TAG_NAME } from './../context-menu/ContextMenu';
 import {
-  CONTAINER_TAG_NAME,
   createFeatureContainer,
+  getNewFeature,
   updateFeatureContainer,
-} from '../feature-container/FeatureContainer';
+} from '../helper';
+import { CONTAINER_TAG_NAME } from '../feature-container/FeatureContainer';
 
 type Attribute = 'features' | 'focused' | 'selection';
 
@@ -20,11 +20,12 @@ export const APP_EVENTS = {
   REQUEST_RENAME_FEATURE: 'REQUEST_RENAME_FEATURE',
   DELETE_NODE: 'DELETE_NODE',
   DELETE_FEATURE: 'DELETE_FEATURE',
-  REQUEST_UPDATE_FEATURES: 'REQUEST_UPDATE_FEATURES',
   ADD_NODES: 'ADD_NODES',
   FOCUS: 'FOCUS',
   DELETE_ITEM: 'DELETE_ITEM',
   RELOAD_FEATURES: 'RELOAD_FEATURES',
+  // document events
+  REQUEST_UPDATE_FEATURES: 'REQUEST_UPDATE_FEATURES',
   REQUEST_CHANGE_NODE_VISIBLE: 'REQUEST_CHANGE_NODE_VISIBLE',
   REQUEST_SYNC_FEATURES: 'REQUEST_SYNC_FEATURES',
 };
@@ -95,9 +96,7 @@ export default class App extends CustomElement {
               !newFeatures.find((newFeature) => newFeature.id === feature.id)
           );
           deletedFeatures.forEach((feature) => {
-            this.shadowRoot
-              ?.querySelector(`${CONTAINER_TAG_NAME}[id="${feature.id}"]`)
-              ?.remove();
+            this.getFeatureContainerElement(feature.id)?.remove();
           });
 
           // case 2. features has both old and new features
@@ -105,9 +104,9 @@ export default class App extends CustomElement {
             oldFeatures.find((oldFeature) => oldFeature.id === feature.id)
           );
           updatedFeatures.forEach((feature) => {
-            const featureContainer = this.shadowRoot?.querySelector(
-              `${CONTAINER_TAG_NAME}[id="${feature.id}"]`
-            ) as HTMLElement;
+            const featureContainer = this.getFeatureContainerElement(
+              feature.id
+            );
             if (featureContainer) {
               updateFeatureContainer(featureContainer, feature);
             }
@@ -126,9 +125,7 @@ export default class App extends CustomElement {
       }
       case 'focused': {
         this.features.forEach((feature) => {
-          const featureContainer = this.shadowRoot?.querySelector(
-            `${CONTAINER_TAG_NAME}[id="${feature.id}"]`
-          ) as HTMLElement;
+          const featureContainer = this.getFeatureContainerElement(feature.id);
           if (featureContainer) {
             updateFeatureContainer(featureContainer, {
               ...feature,
@@ -141,6 +138,12 @@ export default class App extends CustomElement {
       default:
         throw new Error('Unknown attribute');
     }
+  }
+
+  getFeatureContainerElement(featureId: string) {
+    return this.shadowRoot?.querySelector(
+      `${CONTAINER_TAG_NAME}[id="${featureId}"]`
+    ) as HTMLElement;
   }
 
   updateFeatureCount() {
@@ -291,25 +294,7 @@ export default class App extends CustomElement {
   }
 }
 
-export const getAppElement = () => {
-  return document.querySelector(APP_TAG_NAME);
-};
-
-export const getContextMenu = () => {
-  return getAppElement()?.shadowRoot?.querySelector(CONTEXT_MENU_TAG_NAME);
-};
-
-const getNewFeature = (index: number): Feature => {
-  return {
-    id: `${new Date().getTime()}-${index}`, // TODO: unique id
-    name: `Feature ${index}`,
-    type: 'FEATURE',
-    visible: true,
-    focused: {},
-    items: [],
-  };
-};
-
+// TODO: bubble로 처리할지 고민..
 const onUpdateFeature = (features: Feature[]) => {
   document.dispatchEvent(
     new CustomEvent(APP_EVENTS.REQUEST_UPDATE_FEATURES, {

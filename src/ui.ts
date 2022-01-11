@@ -1,24 +1,20 @@
 import '@webcomponents/custom-elements/src/native-shim';
 import '@webcomponents/custom-elements/custom-elements.min';
 
-import {
-  APP_EVENTS,
-  APP_TAG_NAME,
-  getAppElement,
-  getContextMenu,
-} from './components/app/App';
-import { CONTAINER_TAG_NAME } from './components/feature-container/FeatureContainer';
-import {
-  CONTEXT_MENU_TAG_NAME,
-  EVENTS,
-} from './components/context-menu/ContextMenu';
-
-import './components';
 import './ui.css';
+import { EVENTS, TAG_NAMES, helper } from './components';
+
+const { findElementByTagName, getAppElement, getContextMenuElement } = helper;
 
 // UI event handler
-class UIEventHandler {
-  constructor() {
+export class UIEventHandler {
+  app: HTMLElement;
+  contextMenu: HTMLElement;
+
+  constructor(appElement: HTMLElement, contextMenuElement: HTMLElement) {
+    this.app = appElement;
+    this.contextMenu = contextMenuElement;
+
     this.onMessageFromFigma();
     this.onDropFromFigma();
     this.onContextMenu();
@@ -33,25 +29,16 @@ class UIEventHandler {
     onmessage = (event) => {
       const { type, value } = event.data.pluginMessage;
       switch (type) {
-        case 'INIT_FEATURES': {
-          const app = document.createElement(APP_TAG_NAME);
-          app.setAttribute('features', JSON.stringify(value.features));
-          document.querySelector('#ui')?.appendChild(app);
-          break;
-        }
         case 'UPDATE_FEATURES': {
-          getAppElement()?.dispatchEvent(
-            new CustomEvent(APP_EVENTS.RELOAD_FEATURES, {
+          this.app.dispatchEvent(
+            new CustomEvent(EVENTS.RELOAD_FEATURES, {
               detail: { features: value.features },
             })
           );
           break;
         }
         case 'UPDATE_SELECTION': {
-          getAppElement()?.setAttribute(
-            'selection',
-            JSON.stringify(value.nodes)
-          );
+          this.app.setAttribute('selection', JSON.stringify(value.nodes));
           break;
         }
         default:
@@ -67,14 +54,14 @@ class UIEventHandler {
     });
     document.addEventListener('mouseup', (event: MouseEvent) => {
       if (dropFromFigma) {
-        const target = event.composedPath() as HTMLElement[];
-        const feature = target.find(
-          (el) => el.tagName === CONTAINER_TAG_NAME.toUpperCase()
+        const feature = findElementByTagName(
+          event.composedPath() as HTMLElement[],
+          TAG_NAMES.CONTAINER
         );
-
         if (feature) {
-          getAppElement()?.dispatchEvent(
-            new CustomEvent(APP_EVENTS.ADD_NODES, {
+          // mouse up on feature
+          this.app.dispatchEvent(
+            new CustomEvent(EVENTS.ADD_NODES, {
               detail: {
                 featureId: feature.id,
               },
@@ -93,18 +80,20 @@ class UIEventHandler {
     document.addEventListener('contextmenu', (event: MouseEvent) => {
       event.preventDefault();
 
-      getContextMenu()?.dispatchEvent(
+      this.contextMenu.dispatchEvent(
         new CustomEvent(EVENTS.OPEN_CONTEXT_MENU, {
           detail: event,
         })
       );
     });
     document.addEventListener('click', (event: MouseEvent) => {
-      const closed = (event.composedPath() as HTMLElement[]).every(
-        (target) => target.tagName !== CONTEXT_MENU_TAG_NAME.toUpperCase()
+      const contextMenu = findElementByTagName(
+        event.composedPath() as HTMLElement[],
+        TAG_NAMES.CONTEXT_MENU
       );
-      if (closed) {
-        getContextMenu()?.dispatchEvent(
+      if (!contextMenu) {
+        // clicked outside of it
+        this.contextMenu.dispatchEvent(
           new CustomEvent(EVENTS.CLOSE_CONTEXT_MENU)
         );
       }
@@ -114,31 +103,27 @@ class UIEventHandler {
   onKeyPressed() {
     document.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        getAppElement()?.dispatchEvent(new CustomEvent(APP_EVENTS.DELETE_ITEM));
+        this.app.dispatchEvent(new CustomEvent(EVENTS.DELETE_ITEM));
       } else if (event.key.toUpperCase() === 'R') {
-        getAppElement()?.dispatchEvent(
-          new CustomEvent(APP_EVENTS.REQUEST_RENAME_FEATURE)
-        );
+        this.app.dispatchEvent(new CustomEvent(EVENTS.REQUEST_RENAME_FEATURE));
       }
     });
   }
 
   onDoubleClick() {
     document.addEventListener('dblclick', () => {
-      getAppElement()?.dispatchEvent(
-        new CustomEvent(APP_EVENTS.REQUEST_RENAME_FEATURE)
-      );
+      this.app.dispatchEvent(new CustomEvent(EVENTS.REQUEST_RENAME_FEATURE));
     });
   }
 
   onRequestChangeNodeVisible() {
-    document.addEventListener(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, ((
+    document.addEventListener(EVENTS.REQUEST_CHANGE_NODE_VISIBLE, ((
       event: CustomEvent
     ) => {
       parent.postMessage(
         {
           pluginMessage: {
-            type: APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE,
+            type: EVENTS.REQUEST_CHANGE_NODE_VISIBLE,
             nodes: event.detail.nodes,
             visible: event.detail.visible,
           },
@@ -149,13 +134,13 @@ class UIEventHandler {
   }
 
   onRequestUpdatedFeatures() {
-    document.addEventListener(APP_EVENTS.REQUEST_UPDATE_FEATURES, ((
+    document.addEventListener(EVENTS.REQUEST_UPDATE_FEATURES, ((
       event: CustomEvent
     ) => {
       parent.postMessage(
         {
           pluginMessage: {
-            type: APP_EVENTS.REQUEST_UPDATE_FEATURES,
+            type: EVENTS.REQUEST_UPDATE_FEATURES,
             features: event.detail.features,
           },
         },
@@ -165,11 +150,11 @@ class UIEventHandler {
   }
 
   onRequestSync() {
-    document.addEventListener(APP_EVENTS.REQUEST_SYNC_FEATURES, (() => {
+    document.addEventListener(EVENTS.REQUEST_SYNC_FEATURES, (() => {
       parent.postMessage(
         {
           pluginMessage: {
-            type: APP_EVENTS.REQUEST_SYNC_FEATURES,
+            type: EVENTS.REQUEST_SYNC_FEATURES,
           },
         },
         '*'
@@ -178,4 +163,8 @@ class UIEventHandler {
   }
 }
 
-new UIEventHandler();
+const appElement = getAppElement();
+const contextMenuElement = getContextMenuElement();
+if (appElement && contextMenuElement) {
+  new UIEventHandler(appElement, contextMenuElement);
+}

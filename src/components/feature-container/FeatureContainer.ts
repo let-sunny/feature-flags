@@ -5,8 +5,12 @@ import Style from './style.scss';
 import Template from './template.html';
 
 import { Feature } from '../types';
-import { createFeatureRow, createNodeRow } from '../row/Row';
-import { getAppElement, APP_EVENTS } from '../app/App';
+import { APP_EVENTS } from '../app/App';
+import {
+  createFeatureContainer,
+  createNodeRow,
+  getAppElement,
+} from '../helper';
 
 type Attribute = 'items' | 'visible' | 'focused' | 'name';
 
@@ -189,26 +193,6 @@ export default class FeatureContainer extends CustomElement {
     });
   }
 }
-
-export const createFeatureContainer = (feature: Feature) => {
-  const element = document.createElement(CONTAINER_TAG_NAME);
-  element.setAttribute('id', feature.id);
-  updateFeatureContainer(element, feature);
-
-  const featureRow = createFeatureRow(feature);
-  element.appendChild(featureRow);
-  return element;
-};
-
-export const updateFeatureContainer = (
-  element: HTMLElement,
-  feature: Feature
-) => {
-  element?.setAttribute('items', JSON.stringify(feature.items));
-  element?.setAttribute('name', feature.name);
-  element?.setAttribute('visible', JSON.stringify(feature.visible));
-  element?.setAttribute('focused', JSON.stringify(feature.focused || '{}'));
-};
 
 const onAddNodes = (featureId: string) => {
   getAppElement()?.dispatchEvent(

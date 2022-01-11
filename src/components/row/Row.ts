@@ -1,8 +1,9 @@
 import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
-import { Feature, Node } from '../types';
-import { APP_EVENTS, getAppElement } from '../app/App';
+
+import { APP_EVENTS } from '../app/App';
+import { getAppElement } from '../helper';
 
 type Attribute = 'type' | 'id' | 'name' | 'visible' | 'node-type';
 
@@ -75,27 +76,6 @@ export default class Row extends CustomElement {
     }) as EventListener);
   }
 }
-
-export const createFeatureRow = (feature: Feature) => {
-  const element = document.createElement(ROW_TAG_NAME);
-  element.setAttribute('id', feature.id);
-  element.setAttribute('name', feature.name);
-  element.setAttribute('visible', feature.visible ? 'true' : 'false');
-  element.setAttribute('editable', 'true');
-  element.setAttribute('type', feature.type);
-  return element;
-};
-
-export const createNodeRow = (node: Node) => {
-  const element = document.createElement(ROW_TAG_NAME);
-  element.setAttribute('id', node.id);
-  element.setAttribute('name', node.name);
-  element.setAttribute('visible', node.visible ? 'true' : 'false');
-  element.setAttribute('editable', 'true');
-  element.setAttribute('type', node.type);
-  element.setAttribute('node-type', node.node);
-  return element;
-};
 
 const onRename = (id: string, name: string) => {
   getAppElement()?.dispatchEvent(
