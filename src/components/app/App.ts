@@ -313,6 +313,7 @@ export default class App extends CustomElement {
         detail: {
           features,
         },
+        bubbles: true,
         composed: true,
       })
     );
@@ -325,6 +326,7 @@ export default class App extends CustomElement {
           nodes: feature.items.filter((item) => item.type === 'NODE'),
           visible: feature.visible,
         },
+        bubbles: true,
         composed: true,
       })
     );
@@ -333,6 +335,7 @@ export default class App extends CustomElement {
   requestSyncFeatures() {
     this.dispatchEvent(
       new CustomEvent(APP_EVENTS.REQUEST_SYNC_FEATURES, {
+        bubbles: true,
         composed: true,
       })
     );
