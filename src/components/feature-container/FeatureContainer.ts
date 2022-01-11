@@ -43,17 +43,10 @@ export default class FeatureContainer extends CustomElement {
   connectedCallback() {
     this.closed = true;
 
-    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
-      this.closed = !this.closed;
-    });
-
+    this.onToggle();
     this.onRequestToggleVisible();
     this.onRequestAddNodes();
-
-    const header = this.shadowRoot?.querySelector(
-      '.header-content'
-    ) as HTMLElement;
-    this.onRequestFocus(header);
+    this.onRequestFocus(this.shadowRoot?.querySelector('.header-content'));
   }
 
   attributeChangedCallback(
@@ -133,7 +126,6 @@ export default class FeatureContainer extends CustomElement {
             this.shadowRoot
               ?.getElementById(`${newFocused.id}`)
               ?.classList.add('focused');
-
             this.shadowRoot
               ?.querySelector('.header')
               ?.classList.remove('focused');
@@ -156,6 +148,12 @@ export default class FeatureContainer extends CustomElement {
   }
 
   // event handlers
+  onToggle() {
+    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
+      this.closed = !this.closed;
+    });
+  }
+
   onRequestToggleVisible() {
     this.shadowRoot
       ?.querySelector('#toggle-visible')
@@ -174,6 +172,8 @@ export default class FeatureContainer extends CustomElement {
 
   onRequestFocus(elem?: HTMLElement | null) {
     elem?.addEventListener('click', (event) => {
+      console.log('hre');
+
       event.composedPath().find((target) => {
         const element = target as HTMLElement;
         if (element.tagName === ROW_TAG_NAME.toUpperCase()) {
