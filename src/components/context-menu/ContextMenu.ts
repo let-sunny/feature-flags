@@ -79,6 +79,7 @@ export default class ContextMenu extends CustomElement {
     this.shadowRoot?.querySelector('#delete')?.addEventListener('click', () => {
       const type = this.target?.getAttribute('type') as ItemType;
       const targetId = this.target?.getAttribute('id');
+
       if (type && targetId) {
         this.requestDeleteFeatureChild(type, targetId);
       }
