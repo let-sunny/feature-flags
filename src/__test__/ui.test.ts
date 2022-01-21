@@ -5,40 +5,38 @@ import { fireEvent } from '@testing-library/dom';
 
 import RootUI from '../ui.html';
 import { UIEventHandler } from '../ui';
-import { TAG_NAMES, EVENTS } from './../components';
+import { TAG_NAMES } from './../components';
+import emitter from '../event/emitter';
 
 window.document.body.innerHTML = RootUI;
 
 describe('ui', () => {
   test('should have defined', () => {
     expect(document.getElementById('ui')).not.toBeNull();
-    expect(document.getElementsByTagName(TAG_NAMES.APP)).not.toBeNull();
   });
 });
 
 describe('document event handlers', () => {
-  const app = document.createElement(TAG_NAMES.APP);
-  const contextMenu = document.createElement(TAG_NAMES.CONTEXT_MENU);
   window.onmessage = jest.fn();
 
-  new UIEventHandler(app, contextMenu);
+  new UIEventHandler();
 
   beforeEach(() => {
-    app.dispatchEvent = jest.fn();
-    contextMenu.dispatchEvent = jest.fn();
     parent.postMessage = jest.fn();
   });
 
   test('onDropFromFigma', () => {
-    const appEvent = app.dispatchEvent as jest.Mock;
+    const mock = jest.fn();
+    emitter.on('addSelectedNodesToFeature', mock);
+
     // nothing happens
     fireEvent.mouseDown(document);
     fireEvent.mouseUp(document);
-    expect(appEvent).not.toBeCalled();
+    expect(mock).not.toBeCalled();
 
     // leave plugin ui
     fireEvent.mouseLeave(document);
-    expect(appEvent).not.toBeCalled();
+    expect(mock).not.toBeCalled();
 
     // drop in feature container
     const featureContainer = document.createElement(TAG_NAMES.CONTAINER);
@@ -48,79 +46,68 @@ describe('document event handlers', () => {
       featureContainer,
       new MouseEvent('mouseup', { bubbles: true, composed: true })
     );
-    expect(appEvent).toBeCalled();
-    expect(appEvent.mock.calls[0][0].type).toBe(EVENTS.ADD_NODES);
-    expect(appEvent.mock.calls[0][0].detail).toEqual({
-      featureId: featureContainer.id,
-    });
+
+    expect(mock).toBeCalled();
+    emitter.off('addSelectedNodesToFeature', mock);
   });
 
   test('onContextMenu', () => {
-    const contextMenuEvent = contextMenu.dispatchEvent as jest.Mock;
-
-    // open context menu
-    fireEvent.contextMenu(document);
-    expect(contextMenuEvent).toBeCalledTimes(1);
-    expect(contextMenuEvent.mock.calls[0][0].type).toBe(
-      EVENTS.OPEN_CONTEXT_MENU
-    );
+    const contextMenu = document.createElement(TAG_NAMES.CONTEXT_MENU);
+    const mock = jest.fn();
+    emitter.on('closeContextMenu', mock);
 
     // if click on outside of context menu, close context menu
     // close context menu
     fireEvent.click(document);
-    expect(contextMenuEvent).toBeCalledTimes(2);
-    expect(contextMenuEvent.mock.calls[1][0].type).toBe(
-      EVENTS.CLOSE_CONTEXT_MENU
-    );
+    expect(mock).toBeCalledTimes(1);
+
     // if click on context menu, do nothing
     document.body.appendChild(contextMenu);
     fireEvent(
       contextMenu,
       new MouseEvent('click', { bubbles: true, composed: true })
     );
-    expect(contextMenuEvent.mock.calls[2][0].type).toBe('click');
-    expect(contextMenuEvent.mock.calls.length).toBe(3);
+    expect(mock).toBeCalledTimes(1);
+    emitter.off('closeContextMenu', mock);
   });
 
   test('onKeyPressed', () => {
-    const appEvent = app.dispatchEvent as jest.Mock;
     // delete
+    let mock = jest.fn();
+    emitter.on('deleteFocusedItem', mock);
     fireEvent.keyDown(document, { key: 'Delete' });
-    expect(appEvent).toBeCalledTimes(1);
-    expect(appEvent.mock.calls[0][0].type).toBe(EVENTS.DELETE_ITEM);
+    expect(mock).toBeCalledTimes(1);
     fireEvent.keyDown(document, { key: 'Backspace' });
-    expect(appEvent).toBeCalledTimes(2);
-    expect(appEvent.mock.calls[1][0].type).toBe(EVENTS.DELETE_ITEM);
+    expect(mock).toBeCalledTimes(2);
+    emitter.off('deleteFocusedItem', mock);
 
     // rename
+    mock = jest.fn();
+    emitter.on('editFocusedFeatureName', mock);
     fireEvent.keyDown(document, { key: 'r' });
-    expect(appEvent).toBeCalledTimes(3);
-    expect(appEvent.mock.calls[2][0].type).toBe(EVENTS.REQUEST_RENAME_FEATURE);
+    expect(mock).toBeCalled();
+    emitter.off('editFocusedFeatureName', mock);
   });
 
   test('onDoubleClick', () => {
-    const appEvent = app.dispatchEvent as jest.Mock;
+    const mock = jest.fn();
+    emitter.on('editFocusedFeatureName', mock);
     fireEvent.dblClick(document);
-    expect(appEvent).toBeCalledTimes(1);
-    expect(appEvent.mock.calls[0][0].type).toBe(EVENTS.REQUEST_RENAME_FEATURE);
+    expect(mock).toBeCalled();
+    emitter.off('editFocusedFeatureName', mock);
   });
 
   test('onRequestChangeNodeVisible', () => {
     const detail = {
-      nodes: 'nodes-test',
-      visible: 'visible-test',
+      nodes: [],
+      visible: true,
     };
-    fireEvent(
-      document,
-      new CustomEvent(EVENTS.REQUEST_CHANGE_NODE_VISIBLE, {
-        detail,
-      })
-    );
+    emitter.emit('changeNodeVisible', detail);
 
     expect(parent.postMessage).toBeCalledTimes(1);
     expect((parent.postMessage as jest.Mock).mock.calls[0][0]).toEqual({
       pluginMessage: {
-        type: EVENTS.REQUEST_CHANGE_NODE_VISIBLE,
+        type: 'CHANGE_NODE_VISIBLE',
         nodes: detail.nodes,
         visible: detail.visible,
       },
@@ -129,31 +116,26 @@ describe('document event handlers', () => {
 
   test('onRequestUpdatedFeatures', () => {
     const detail = {
-      features: 'features-test',
+      features: [],
     };
-    fireEvent(
-      document,
-      new CustomEvent(EVENTS.REQUEST_UPDATE_FEATURES, {
-        detail,
-      })
-    );
+    emitter.emit('updateFeatures', detail);
 
     expect(parent.postMessage).toBeCalledTimes(1);
     expect((parent.postMessage as jest.Mock).mock.calls[0][0]).toEqual({
       pluginMessage: {
-        type: EVENTS.REQUEST_UPDATE_FEATURES,
+        type: 'UPDATE_FEATURES',
         features: detail.features,
       },
     });
   });
 
   test('onRequestSync', () => {
-    fireEvent(document, new CustomEvent(EVENTS.REQUEST_SYNC_FEATURES));
+    emitter.emit('syncFeatures');
 
     expect(parent.postMessage).toBeCalledTimes(1);
     expect((parent.postMessage as jest.Mock).mock.calls[0][0]).toEqual({
       pluginMessage: {
-        type: EVENTS.REQUEST_SYNC_FEATURES,
+        type: 'SYNC_FEATURES',
       },
     });
   });

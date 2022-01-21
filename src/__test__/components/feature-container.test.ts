@@ -2,28 +2,34 @@
  * @jest-environment jsdom
  */
 import { fireEvent } from '@testing-library/dom';
-import { EVENTS, TAG_NAMES } from '../../components';
+import FeatureContainer, {
+  CONTAINER_TAG_NAME,
+} from './../../components/feature-container/FeatureContainer';
+import { ROW_TAG_NAME } from './../../components/row/Row';
+import emitter from './../../event/emitter';
 
-describe(TAG_NAMES.CONTAINER, () => {
+FeatureContainer.prototype.emitter = emitter;
+customElements.define(CONTAINER_TAG_NAME, FeatureContainer);
+describe(CONTAINER_TAG_NAME, () => {
   test('should have defined', () => {
-    expect(customElements.get(TAG_NAMES.CONTAINER)).toBeDefined();
+    expect(customElements.get(CONTAINER_TAG_NAME)).toBeDefined();
   });
 
   test('appending to DOM', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+    const element = document.createElement(CONTAINER_TAG_NAME);
     document.body.appendChild(element);
-    expect(document.body.querySelector(TAG_NAMES.CONTAINER)).toBeDefined();
+    expect(document.body.querySelector(CONTAINER_TAG_NAME)).toBeDefined();
   });
 
   test('initial closed attribute is true', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+    const element = document.createElement(CONTAINER_TAG_NAME);
     document.body.appendChild(element);
 
     expect(element.getAttribute('closed')).toBe('true');
   });
 });
 
-describe(`${TAG_NAMES.CONTAINER} event handlers`, () => {
+describe(`${CONTAINER_TAG_NAME} event handlers`, () => {
   beforeEach(() => {
     jest
       .spyOn(window, 'requestAnimationFrame')
@@ -35,7 +41,7 @@ describe(`${TAG_NAMES.CONTAINER} event handlers`, () => {
   });
 
   test('should toggle closed attribute', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+    const element = document.createElement(CONTAINER_TAG_NAME);
     element.id = 'test-container';
     element.setAttribute('closed', 'true');
 
@@ -47,49 +53,49 @@ describe(`${TAG_NAMES.CONTAINER} event handlers`, () => {
   });
 
   test('should request toggle feature visibility', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+    const element = document.createElement(CONTAINER_TAG_NAME);
     element.id = 'test-container';
     element.setAttribute('visible', 'false');
     document.body.appendChild(element);
 
-    element.dispatchEvent = jest.fn();
     const button = element.shadowRoot?.querySelector(
       '#toggle-visible'
     ) as HTMLElement;
+
+    const mock = jest.fn();
+    emitter.on('changeFeatureVisible', mock);
+
     fireEvent.click(button);
 
-    const elementEvent = element.dispatchEvent as jest.Mock;
-    expect(elementEvent.mock.calls[0][0].type).toBe(EVENTS.CHANGE_VISIBLE);
-    expect(elementEvent.mock.calls[0][0].detail).toEqual({
-      id: element.id,
-      visible: element.getAttribute('visible') !== 'true',
-    });
+    expect(mock).toBeCalled();
+    expect(mock.mock.calls[0][0].id).toBe(element.id);
+    emitter.off('changeFeatureVisible', mock);
   });
 
   test('should request add node', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+    const element = document.createElement(CONTAINER_TAG_NAME);
     element.id = 'test-container';
     document.body.appendChild(element);
 
-    element.dispatchEvent = jest.fn();
     const button = element.shadowRoot?.querySelector(
       '#add-node'
     ) as HTMLElement;
+
+    const mock = jest.fn();
+    emitter.on('addSelectedNodesToFeature', mock);
     fireEvent.click(button);
 
-    const elementEvent = element.dispatchEvent as jest.Mock;
-    expect(elementEvent.mock.calls[0][0].type).toBe(EVENTS.ADD_NODES);
-    expect(elementEvent.mock.calls[0][0].detail).toEqual({
-      featureId: element.id,
-    });
+    expect(mock).toBeCalled();
+    expect(mock.mock.calls[0][0].id).toBe(element.id);
+    emitter.off('addSelectedNodesToFeature', mock);
   });
 
-  test('should request focus', () => {
-    const element = document.createElement(TAG_NAMES.CONTAINER);
+  test('should focus item', () => {
+    const element = document.createElement(CONTAINER_TAG_NAME);
     element.id = 'test-container';
     document.body.appendChild(element);
 
-    const target = document.createElement(TAG_NAMES.ROW);
+    const target = document.createElement(ROW_TAG_NAME);
     target.id = 'test-row';
     target.setAttribute('type', 'FEATURE');
     element.appendChild(target);
@@ -99,12 +105,12 @@ describe(`${TAG_NAMES.CONTAINER} event handlers`, () => {
       composed: true,
     });
 
-    const elementEvent = element.dispatchEvent as jest.Mock;
-    expect(elementEvent.mock.calls[0][0].type).toBe(EVENTS.FOCUS);
-    expect(elementEvent.mock.calls[0][0].detail).toEqual({
-      id: target.id,
+    emitter.emit('focus', {
+      id: element.id,
       parentId: element.id,
-      type: target.getAttribute('type'),
+      type: 'FEATURE',
     });
+
+    expect(element.shadowRoot?.querySelector('.focus')).toBeDefined();
   });
 });
