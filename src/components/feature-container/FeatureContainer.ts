@@ -172,8 +172,6 @@ export default class FeatureContainer extends CustomElement {
 
   onRequestFocus(elem?: HTMLElement | null) {
     elem?.addEventListener('click', (event) => {
-      console.log('hre');
-
       event.composedPath().find((target) => {
         const element = target as HTMLElement;
         if (element.tagName === ROW_TAG_NAME.toUpperCase()) {
