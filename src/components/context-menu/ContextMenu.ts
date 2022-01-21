@@ -1,15 +1,10 @@
 import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
-import { ROW_TAG_NAME, ROW_EVENTS } from '../row/Row';
-import { APP_EVENTS } from '../app/App';
 import { ItemType } from '../types';
+import { Events } from './../../event/type';
 
 export const CONTEXT_MENU_TAG_NAME = 'feature-flags-context-menu';
-export const CONTEXT_MENU_EVENTS = {
-  OPEN_CONTEXT_MENU: 'OPEN_CONTEXT_MENU',
-  CLOSE_CONTEXT_MENU: 'CLOSE_CONTEXT_MENU',
-};
 export default class ContextMenu extends CustomElement {
   target: HTMLElement | null;
   constructor() {
@@ -18,10 +13,12 @@ export default class ContextMenu extends CustomElement {
   }
 
   connectedCallback() {
-    this.onOpen();
-    this.onClose();
-    this.onRequestRename();
-    this.onRequestDelete();
+    this.registerEventHandlers([
+      this.onOpen.bind(this),
+      this.onClose.bind(this),
+      this.onRequestRename.bind(this),
+      this.onRequestDelete.bind(this),
+    ]);
   }
 
   close() {
@@ -32,51 +29,58 @@ export default class ContextMenu extends CustomElement {
 
   // event handlers
   onOpen() {
-    this.addEventListener(CONTEXT_MENU_EVENTS.OPEN_CONTEXT_MENU, (({
-      detail: event,
-    }: CustomEvent) => {
-      const row = (event.composedPath() as HTMLElement[]).find(
-        (target) => target.tagName === ROW_TAG_NAME.toUpperCase()
-      );
+    const handler = ({
+      target,
+      position: { x, y },
+    }: Events['openContextMenu']) => {
+      this.target = target;
+      requestAnimationFrame(() => {
+        // rename is able only for feature
+        if (target.getAttribute('type') === 'FEATURE') {
+          this.shadowRoot
+            ?.querySelector('.menu-item.rename')
+            ?.classList.remove('hidden');
+        } else {
+          this.shadowRoot
+            ?.querySelector('.menu-item.rename')
+            ?.classList.add('hidden');
+        }
 
-      this.target = row || null;
-      if (this.target) {
-        const type = this.target.getAttribute('type') as ItemType;
-        requestAnimationFrame(() => {
-          // rename is able only for feature
-          if (type === 'FEATURE') {
-            this.shadowRoot
-              ?.querySelector('.menu-item.rename')
-              ?.classList.remove('hidden');
-          } else {
-            this.shadowRoot
-              ?.querySelector('.menu-item.rename')
-              ?.classList.add('hidden');
-          }
-
-          this.style.display = 'block';
-          this.style.left = `${event.pageX}px`;
-          this.style.top = `${event.pageY}px`;
-        });
-      }
-    }) as EventListener);
+        this.style.display = 'block';
+        this.style.left = `${x}px`;
+        this.style.top = `${y}px`;
+      });
+    };
+    this.emitter.on('openContextMenu', handler);
+    return () => {
+      this.emitter.off('openContextMenu', handler);
+    };
   }
 
   onClose() {
-    this.addEventListener(CONTEXT_MENU_EVENTS.CLOSE_CONTEXT_MENU, (() => {
-      this.close();
-    }) as EventListener);
+    this.emitter.on('closeContextMenu', this.close.bind(this));
+    return () => {
+      this.emitter.off('closeContextMenu', this.close);
+    };
   }
 
   onRequestRename() {
-    this.shadowRoot?.querySelector('#rename')?.addEventListener('click', () => {
-      this.target?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
+    const button = this.shadowRoot?.querySelector('#rename');
+    const handler = () => {
+      if (this.target) {
+        this.emitter.emit('editFeatureName', { id: this.target.id });
+      }
       this.close();
-    });
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
   onRequestDelete() {
-    this.shadowRoot?.querySelector('#delete')?.addEventListener('click', () => {
+    const button = this.shadowRoot?.querySelector('#delete');
+    const handler = () => {
       const type = this.target?.getAttribute('type') as ItemType;
       const targetId = this.target?.getAttribute('id');
 
@@ -84,20 +88,18 @@ export default class ContextMenu extends CustomElement {
         this.requestDeleteFeatureChild(type, targetId);
       }
       this.close();
-    });
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
   // dispatch events
   requestDeleteFeatureChild(type: ItemType, id: string) {
-    const eventName =
-      type === 'FEATURE' ? APP_EVENTS.DELETE_FEATURE : APP_EVENTS.DELETE_NODE;
-    this.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: {
-          id,
-        },
-        composed: true,
-      })
-    );
+    this.emitter.emit('deleteItem', {
+      id,
+      type,
+    });
   }
 }

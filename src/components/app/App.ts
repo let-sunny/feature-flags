@@ -1,9 +1,9 @@
-import { ROW_TAG_NAME, ROW_EVENTS } from './../row/Row';
+import { Events } from './../../event/type';
 import CustomElement from '../CustomElement';
 import Template from './template.html';
 import Style from './style.scss';
 
-import { Feature, Node, Focused } from '../types';
+import { Feature, Node, Focused, Item } from '../types';
 import {
   createFeatureContainer,
   getNewFeature,
@@ -11,38 +11,23 @@ import {
 } from '../helper';
 import { CONTAINER_TAG_NAME } from '../feature-container/FeatureContainer';
 
-type Attribute = 'features' | 'focused' | 'selection';
+type Attribute = 'features' | 'selection';
 
 export const APP_TAG_NAME = 'feature-flags-app';
-export const APP_EVENTS = {
-  CHANGE_VISIBLE: 'CHANGE_VISIBLE',
-  RENAME_FEATURE: 'RENAME_FEATURE',
-  REQUEST_RENAME_FEATURE: 'REQUEST_RENAME_FEATURE',
-  DELETE_NODE: 'DELETE_NODE',
-  DELETE_FEATURE: 'DELETE_FEATURE',
-  ADD_NODES: 'ADD_NODES',
-  FOCUS: 'FOCUS',
-  DELETE_ITEM: 'DELETE_ITEM',
-  SET_FEATURES: 'SET_FEATURES',
-  SET_SELECTION_NODES: 'SET_SELECTION_NODES',
-  // document events
-  REQUEST_UPDATE_FEATURES: 'REQUEST_UPDATE_FEATURES',
-  REQUEST_CHANGE_NODE_VISIBLE: 'REQUEST_CHANGE_NODE_VISIBLE',
-  REQUEST_SYNC_FEATURES: 'REQUEST_SYNC_FEATURES',
-};
 
 export default class App extends CustomElement {
   index: number;
+  focused: Focused = {};
   static get observedAttributes(): Attribute[] {
-    return ['features', 'focused'];
+    return ['features'];
   }
 
   get features(): Feature[] {
     return JSON.parse(this.getAttribute('features') || '[]');
   }
 
-  set features(feature: Feature[]) {
-    this.setAttribute('features', JSON.stringify(feature));
+  set features(features: Feature[]) {
+    this.setAttribute('features', JSON.stringify(features));
   }
 
   get selectionNodesFromFigmaPage(): Node[] {
@@ -53,10 +38,6 @@ export default class App extends CustomElement {
     this.setAttribute('selection', JSON.stringify(nodes));
   }
 
-  get focused() {
-    return JSON.parse(this.getAttribute('focused') || 'null') as Focused;
-  }
-
   constructor() {
     super(Template, Style);
     this.index = 0;
@@ -64,19 +45,20 @@ export default class App extends CustomElement {
 
   connectedCallback() {
     this.index = this.features.length + 1;
-
-    this.onCreateFeature();
-    this.onSyncFeatures(); // sync features from figma page
-    this.onDeleteFeature();
-    this.onChangeFeatureVisible();
-    this.onDeleteNode();
-    this.onAddNodes();
-    this.onFocus();
-    this.onDeleteItem(); // delete feature or node
-    this.onRenameFeature(); // set name
-    this.onRequestRenameFeature(); // request to display input for name
-    this.onSetFeatures();
-    this.onSetSelectionNodes(); // set selection nodes from figma page
+    this.registerEventHandlers([
+      this.onSetFeatures.bind(this),
+      this.onCreateFeature.bind(this),
+      this.onSyncFeatures.bind(this), // sync features from figma page
+      this.onChangeFeatureVisible.bind(this),
+      this.onAddNodes.bind(this),
+      this.onDeleteItem.bind(this), // delete feature or node
+      this.onDeleteFocusedItem.bind(this), // delete focused feature or node
+      this.onRenameFeature.bind(this), // set name
+      this.onEditFocusedFeatureName.bind(this), // request to display input for editing name
+      this.onSetFeatures.bind(this),
+      this.onSetSelectionNodes.bind(this), // set selection nodes from figma page
+      this.onFocus.bind(this),
+    ]);
   }
 
   attributeChangedCallback(
@@ -124,20 +106,8 @@ export default class App extends CustomElement {
               !oldFeatures.find((oldFeature) => oldFeature.id === feature.id)
           );
           addedFeatures.forEach((feature) => {
-            container?.appendChild(createFeatureContainer(feature));
+            container?.appendChild(createFeatureContainer(feature, feature.id));
           });
-        });
-        break;
-      }
-      case 'focused': {
-        this.features.forEach((feature) => {
-          const featureContainer = this.getFeatureContainerElement(feature.id);
-          if (featureContainer) {
-            updateFeatureContainer(featureContainer, {
-              ...feature,
-              focused: this.focused,
-            });
-          }
         });
         break;
       }
@@ -159,185 +129,226 @@ export default class App extends CustomElement {
     }
   }
 
+  deleteFeature(id: Feature['id']) {
+    this.features = this.features.filter((feature) => feature.id !== id);
+  }
+
+  deleteNode(id: Node['id']) {
+    this.features = deleteFeatureItem(this.features, id);
+  }
+
+  deleteItem({ id, type }: Pick<Item, 'id' | 'type'>) {
+    if (type === 'NODE') {
+      this.deleteNode(id);
+    } else if (type === 'FEATURE') {
+      this.deleteFeature(id);
+    } else {
+      throw new Error('Unknown type');
+    }
+  }
+
   // event handlers
   onSetSelectionNodes() {
-    this.addEventListener(APP_EVENTS.SET_SELECTION_NODES, ((e: CustomEvent) => {
-      const { detail } = e;
-      this.selectionNodesFromFigmaPage = detail.nodes;
-    }) as EventListener);
-  }
-
-  onFocus() {
-    this.addEventListener(APP_EVENTS.FOCUS, ((e: CustomEvent) => {
-      const { detail } = e;
-      this.setAttribute('focused', JSON.stringify(detail));
-    }) as EventListener);
-  }
-
-  onDeleteNode() {
-    this.addEventListener(APP_EVENTS.DELETE_NODE, ((e: CustomEvent) => {
-      const { detail } = e;
-      this.features = this.features.map((feature) => {
-        if (feature.items.find((item) => item.id === detail.id)) {
-          return {
-            ...feature,
-            items: feature.items.filter((item) => item.id !== detail.id),
-          };
-        } else {
-          return feature;
-        }
-      });
-    }) as EventListener);
+    const handler = ({ nodes }: Events['setSelectionNodes']) => {
+      this.selectionNodesFromFigmaPage = nodes;
+    };
+    this.emitter.on('setSelectionNodes', handler);
+    return () => {
+      this.emitter.off('setSelectionNodes', handler);
+    };
   }
 
   onAddNodes() {
-    this.addEventListener(APP_EVENTS.ADD_NODES, ((e: CustomEvent) => {
-      const { detail } = e;
-      this.features = this.features.map((feature) => {
-        if (feature.id === detail.featureId) {
-          const newFeature = {
-            ...feature,
-            items: [
-              ...feature.items,
-              ...this.selectionNodesFromFigmaPage.filter((newNode) =>
-                feature.items.every((exist) => exist.id !== newNode.id)
-              ),
-            ],
-          };
-          this.requestSyncNodeVisible(newFeature);
-          return newFeature;
-        } else {
-          return feature;
-        }
-      });
-    }) as EventListener);
+    const handler = ({ id }: Events['addSelectedNodesToFeature']) => {
+      this.features = addNodesByFeatureId(
+        this.features,
+        id,
+        this.selectionNodesFromFigmaPage
+      );
+      const newFeature = findFeatureById(this.features, id);
+      if (newFeature) {
+        this.requestSyncNodeVisible(newFeature);
+      }
+    };
+    this.emitter.on('addSelectedNodesToFeature', handler);
+    return () => {
+      this.emitter.off('addSelectedNodesToFeature', handler);
+    };
   }
 
   onCreateFeature() {
-    this.shadowRoot
-      ?.querySelector('#add-feature')
-      ?.addEventListener('click', () => {
-        this.features = [...this.features, getNewFeature(this.index)];
-        this.index += 1;
-      });
+    const button = this.shadowRoot?.querySelector('#add-feature');
+    const handler = () => {
+      this.features = [...this.features, getNewFeature(this.index)];
+      this.index += 1;
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
   onSyncFeatures() {
-    this.shadowRoot?.querySelector('#sync')?.addEventListener('click', () => {
-      this.requestSyncFeatures();
-    });
-  }
-
-  onDeleteFeature() {
-    this.addEventListener(APP_EVENTS.DELETE_FEATURE, ((e: CustomEvent) => {
-      const { detail } = e;
-      this.features = this.features.filter(
-        (feature) => feature.id !== detail.id
-      );
-    }) as EventListener);
+    const button = this.shadowRoot?.querySelector('#sync');
+    button?.addEventListener('click', this.requestSyncFeatures.bind(this));
+    return () => {
+      button?.removeEventListener('click', this.requestSyncFeatures);
+    };
   }
 
   onRenameFeature() {
-    this.addEventListener(APP_EVENTS.RENAME_FEATURE, ((e: CustomEvent) => {
-      const { detail } = e;
-
-      this.features = this.features.map((feature) => {
-        if (feature.id === detail.id) {
-          return { ...feature, name: detail.name };
-        } else {
-          return feature;
-        }
-      });
-    }) as EventListener);
+    const handler = ({ id, name }: Events['renameFeature']) => {
+      this.features = updateFeatureById(this.features, id, { name });
+    };
+    this.emitter.on('renameFeature', handler);
+    return () => {
+      this.emitter.off('renameFeature', handler);
+    };
   }
 
   onChangeFeatureVisible() {
-    this.addEventListener(APP_EVENTS.CHANGE_VISIBLE, ((e: CustomEvent) => {
-      const { detail } = e;
-      const targetFeature = this.features.find(
-        (feature) => feature.id === detail.id
-      );
+    const handler = ({ id, visible }: Events['changeFeatureVisible']) => {
+      const targetFeature = findFeatureById(this.features, id);
       if (!targetFeature) return;
+      const newFeature = { ...targetFeature, visible };
 
-      this.features = this.features.map((feature) => {
-        if (feature.id == detail.id) {
-          const newFeature = { ...feature, visible: detail.visible };
-          this.requestSyncNodeVisible(newFeature);
-          return newFeature;
-        } else {
-          return feature;
-        }
-      });
-    }) as EventListener);
+      this.features = updateFeatureById(this.features, id, { visible });
+      this.requestSyncNodeVisible(newFeature);
+    };
+    this.emitter.on('changeFeatureVisible', handler);
+    return () => {
+      this.emitter.off('changeFeatureVisible', handler);
+    };
   }
 
   onDeleteItem() {
-    this.addEventListener(APP_EVENTS.DELETE_ITEM, (() => {
-      if (!this.focused?.id) return;
-      const eventName =
-        this.focused.type === 'NODE'
-          ? APP_EVENTS.DELETE_NODE
-          : APP_EVENTS.DELETE_FEATURE;
-
-      this.dispatchEvent(
-        new CustomEvent(eventName, {
-          detail: { id: this.focused.id },
-        })
-      );
-    }) as EventListener);
+    const handler = (event: Events['deleteItem']) => {
+      this.deleteItem(event);
+    };
+    this.emitter.on('deleteItem', handler);
+    return () => {
+      this.emitter.off('deleteItem', handler);
+    };
   }
 
-  onRequestRenameFeature() {
-    this.addEventListener(APP_EVENTS.REQUEST_RENAME_FEATURE, (() => {
-      if (!this.focused?.id) return;
+  onDeleteFocusedItem() {
+    const handler = () => {
+      if (!this.focused?.id || !this.focused.type) return;
+      const { id, type } = this.focused;
+      this.deleteItem({ id, type });
+    };
+    this.emitter.on('deleteFocusedItem', handler);
+    return () => {
+      this.emitter.off('deleteFocusedItem', handler);
+    };
+  }
 
-      if (this.focused.id && this.focused.type === 'FEATURE') {
-        this.shadowRoot
-          ?.querySelector(`${CONTAINER_TAG_NAME}[id="${this.focused.id}"]`)
-          ?.querySelector(ROW_TAG_NAME)
-          ?.dispatchEvent(new CustomEvent(ROW_EVENTS.REQUEST_RENAME));
+  onEditFocusedFeatureName() {
+    const handler = () => {
+      if (this.focused?.id) {
+        this.emitter.emit('editFeatureName', { id: this.focused.id });
       }
-    }) as EventListener);
+    };
+    this.emitter.on('editFocusedFeatureName', handler);
+    return () => {
+      this.emitter.off('editFocusedFeatureName', handler);
+    };
   }
 
   onSetFeatures() {
-    this.addEventListener(APP_EVENTS.SET_FEATURES, ((event: CustomEvent) => {
-      this.features = event.detail.features;
-    }) as EventListener);
+    const handler = ({ features }: Events['setFeatures']) => {
+      this.features = features;
+    };
+    this.emitter.on('setFeatures', handler);
+    return () => {
+      this.emitter.off('setFeatures', handler);
+    };
+  }
+
+  onFocus() {
+    const handler = (focused: Events['focus']) => {
+      this.focused = focused;
+    };
+    this.emitter.on('focus', handler);
+    return () => {
+      this.emitter.off('focus', handler);
+    };
   }
 
   // dispatch events
   requestUpdateFeature(features: Feature[]) {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.REQUEST_UPDATE_FEATURES, {
-        detail: {
-          features,
-        },
-        bubbles: true,
-        composed: true,
-      })
-    );
+    this.emitter.emit('updateFeatures', {
+      features,
+    });
   }
 
   requestSyncNodeVisible(feature: Feature) {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.REQUEST_CHANGE_NODE_VISIBLE, {
-        detail: {
-          nodes: feature.items.filter((item) => item.type === 'NODE'),
-          visible: feature.visible,
-        },
-        bubbles: true,
-        composed: true,
-      })
-    );
+    this.emitter.emit('changeNodeVisible', {
+      nodes: filterFeatureItemByType(feature, 'NODE'),
+      visible: feature.visible,
+    });
   }
 
   requestSyncFeatures() {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.REQUEST_SYNC_FEATURES, {
-        bubbles: true,
-        composed: true,
-      })
-    );
+    this.emitter.emit('syncFeatures');
   }
 }
+
+// feature helper function
+const addNodesByFeatureId = (
+  features: Feature[],
+  id: Feature['id'],
+  nodes: Node[]
+) => {
+  return features.map((feature) => {
+    if (feature.id === id) {
+      const newFeature = {
+        ...feature,
+        items: [
+          ...feature.items,
+          ...nodes.filter((newNode) =>
+            feature.items.every((exist) => exist.id !== newNode.id)
+          ),
+        ],
+      };
+      return newFeature;
+    } else {
+      return feature;
+    }
+  });
+};
+
+const deleteFeatureItem = (features: Feature[], itemId: Item['id']) => {
+  return features.map((feature) => {
+    if (feature.items.find((item) => item.id === itemId)) {
+      return {
+        ...feature,
+        items: feature.items.filter((item) => item.id !== itemId),
+      };
+    } else {
+      return feature;
+    }
+  });
+};
+
+const updateFeatureById = (
+  features: Feature[],
+  id: Feature['id'],
+  newFeature: Partial<Feature>
+) => {
+  return features.map((feature) => {
+    if (feature.id === id) {
+      return { ...feature, ...newFeature };
+    } else {
+      return feature;
+    }
+  });
+};
+
+const findFeatureById = (features: Feature[], id: Feature['id']) => {
+  return features.find((feature) => feature.id === id);
+};
+
+const filterFeatureItemByType = (feature: Feature, type: Item['type']) => {
+  return feature.items.filter((item) => item.type === type);
+};

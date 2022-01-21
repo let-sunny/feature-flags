@@ -1,29 +1,31 @@
 import { ItemType, Item, Feature, Node } from './../components/types';
 export type Events = {
   changeFeatureVisible: {
-    featureId: string;
+    id: string;
+    visible: boolean;
   };
   renameFeature: {
-    featureId: string;
+    id: string;
     name: string;
   };
+  editFocusedFeatureName: undefined;
   editFeatureName: {
-    featureId: string;
+    id: string;
   };
   deleteFocusedItem: undefined;
   deleteItem: {
     id: string;
     type: ItemType;
   };
-  addSelectedNodes: {
-    featureId: string;
+  addSelectedNodesToFeature: {
+    id: string;
   };
   focus: {
     id: string;
     parentId: string;
     type: ItemType;
   };
-  setFeature: {
+  setFeatures: {
     features: Feature[];
   };
   setSelectionNodes: {

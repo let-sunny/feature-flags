@@ -1,27 +1,23 @@
-import { Focused, ItemType } from './../types';
+import { Events } from './../../event/type';
 import { ROW_TAG_NAME } from './../row/Row';
 import CustomElement from '../CustomElement';
 import Style from './style.scss';
 import Template from './template.html';
 
 import { Feature } from '../types';
-import { APP_EVENTS } from '../app/App';
 import { createFeatureContainer, createNodeRow } from '../helper';
 
-type Attribute = 'items' | 'visible' | 'focused' | 'name';
+type Attribute = 'items' | 'visible' | 'name';
 
 export const CONTAINER_TAG_NAME = 'feature-flags-container';
 
 export default class FeatureContainer extends CustomElement {
-  focused: Focused;
-
   static get observedAttributes(): Attribute[] {
-    return ['items', 'visible', 'focused', 'name'];
+    return ['items', 'visible', 'name'];
   }
 
   constructor() {
     super(Template, Style);
-    this.focused = {};
   }
 
   get closed() {
@@ -43,10 +39,12 @@ export default class FeatureContainer extends CustomElement {
   connectedCallback() {
     this.closed = true;
 
-    this.onToggle();
-    this.onRequestToggleVisible();
-    this.onRequestAddNodes();
-    this.onRequestFocus(this.shadowRoot?.querySelector('.header-content'));
+    this.registerEventHandlers([
+      this.onToggle.bind(this),
+      this.onRequestToggleVisible.bind(this),
+      this.onRequestAddNodes.bind(this),
+      this.onFocus.bind(this),
+    ]);
   }
 
   attributeChangedCallback(
@@ -80,19 +78,25 @@ export default class FeatureContainer extends CustomElement {
           switch (item.type) {
             case 'FEATURE': {
               listItem.appendChild(
-                createFeatureContainer({
-                  ...item,
-                  visible: this.visible,
-                })
+                createFeatureContainer(
+                  {
+                    ...item,
+                    visible: this.visible,
+                  },
+                  this.id
+                )
               );
               break;
             }
             case 'NODE': {
               listItem.appendChild(
-                createNodeRow({
-                  ...item,
-                  visible: this.visible,
-                })
+                createNodeRow(
+                  {
+                    ...item,
+                    visible: this.visible,
+                  },
+                  this.id
+                )
               );
               break;
             }
@@ -100,48 +104,13 @@ export default class FeatureContainer extends CustomElement {
               throw new Error('Unknown child type');
           }
 
-          this.onRequestFocus(listItem);
           return listItem;
         });
 
         container?.replaceChildren(...childrenElements);
         break;
       }
-      case 'focused': {
-        const newFocused = JSON.parse(newValue) as Focused;
-        if (!newFocused.id) return;
 
-        requestAnimationFrame(() => {
-          if (
-            this.id === newFocused.id &&
-            this.focused?.type === newFocused.type
-          ) {
-            // add focused style
-            this.shadowRoot?.querySelector('.header')?.classList.add('focused');
-            this.shadowRoot
-              ?.getElementById(`${newFocused.id}`)
-              ?.classList.remove('focused');
-          } else if (this.id === newFocused.parentId) {
-            // add focused style
-            this.shadowRoot
-              ?.getElementById(`${newFocused.id}`)
-              ?.classList.add('focused');
-            this.shadowRoot
-              ?.querySelector('.header')
-              ?.classList.remove('focused');
-          } else {
-            this.focused = {};
-            // remove focused style
-            this.shadowRoot
-              ?.querySelector('.header')
-              ?.classList.remove('focused');
-            this.shadowRoot
-              ?.getElementById(`${newFocused.id}`)
-              ?.classList.remove('focused');
-          }
-        });
-        break;
-      }
       default:
         throw new Error('Unknown attribute');
     }
@@ -149,69 +118,70 @@ export default class FeatureContainer extends CustomElement {
 
   // event handlers
   onToggle() {
-    this.shadowRoot?.querySelector('.toggle')?.addEventListener('click', () => {
+    const button = this.shadowRoot?.querySelector('.toggle');
+    const handler = () => {
       this.closed = !this.closed;
-    });
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
   onRequestToggleVisible() {
-    this.shadowRoot
-      ?.querySelector('#toggle-visible')
-      ?.addEventListener('click', () => {
-        this.requestToggleVisible(this.id, !this.visible);
-      });
+    const button = this.shadowRoot?.querySelector('#toggle-visible');
+    const handler = () => {
+      this.requestToggleVisible(this.id, !this.visible);
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
   onRequestAddNodes() {
-    this.shadowRoot
-      ?.querySelector('#add-node')
-      ?.addEventListener('click', () => {
-        this.requestAddNodes(this.id);
-      });
+    const button = this.shadowRoot?.querySelector('#add-node');
+    const handler = () => {
+      this.requestAddNodes(this.id);
+    };
+    button?.addEventListener('click', handler);
+    return () => {
+      button?.removeEventListener('click', handler);
+    };
   }
 
-  onRequestFocus(elem?: HTMLElement | null) {
-    elem?.addEventListener('click', (event) => {
-      event.composedPath().find((target) => {
-        const element = target as HTMLElement;
-        if (element.tagName === ROW_TAG_NAME.toUpperCase()) {
-          this.focused = {
-            id: element.id,
-            parentId: this.id,
-            type: element.getAttribute('type') as ItemType,
-          };
-
-          this.requestFocus(this.focused);
+  onFocus() {
+    const handler = (focused: Events['focus']) => {
+      requestAnimationFrame(() => {
+        // reset
+        Array.from(this.shadowRoot?.querySelectorAll('.focused') || []).forEach(
+          (el) => {
+            el.classList.remove('focused');
+          }
+        );
+        if (focused.id === this.id) {
+          // add focused style
+          this.shadowRoot?.querySelector('.header')?.classList.add('focused');
+        } else if (this.id === focused.parentId) {
+          // add focused style
+          this.shadowRoot
+            ?.getElementById(`${focused.id}`)
+            ?.classList.add('focused');
         }
       });
-    });
+    };
+    this.emitter.on('focus', handler);
+    return () => {
+      this.emitter.off('focus', handler);
+    };
   }
 
   // dispatch events
-  requestAddNodes(featureId: string) {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.ADD_NODES, {
-        detail: { featureId },
-        composed: true,
-      })
-    );
+  requestAddNodes(id: string) {
+    this.emitter.emit('addSelectedNodesToFeature', { id });
   }
 
-  requestToggleVisible(featureId: string, visible: boolean) {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.CHANGE_VISIBLE, {
-        detail: { id: featureId, visible },
-        composed: true,
-      })
-    );
-  }
-
-  requestFocus(focused: Focused) {
-    this.dispatchEvent(
-      new CustomEvent(APP_EVENTS.FOCUS, {
-        detail: focused,
-        composed: true,
-      })
-    );
+  requestToggleVisible(id: string, visible: boolean) {
+    this.emitter.emit('changeFeatureVisible', { id, visible });
   }
 }

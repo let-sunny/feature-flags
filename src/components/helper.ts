@@ -19,7 +19,6 @@ export const getNewFeature = (index: number): Feature => {
     name: `Feature ${index}`,
     type: 'FEATURE',
     visible: true,
-    focused: {},
     items: [],
   };
 };
@@ -28,34 +27,34 @@ export const getContextMenuElement = (): HTMLElement | null | undefined => {
   return getAppElement()?.shadowRoot?.querySelector(CONTEXT_MENU_TAG_NAME);
 };
 
-export const createFeatureContainer = (feature: Feature) => {
+export const createFeatureContainer = (feature: Feature, parentId: string) => {
   const element = document.createElement(CONTAINER_TAG_NAME);
   element.setAttribute('id', feature.id);
   updateFeatureContainer(element, feature);
 
-  const featureRow = createFeatureRow(feature);
+  const featureRow = createFeatureRow(feature, parentId);
   element.appendChild(featureRow);
   return element;
 };
 
-export const createFeatureRow = (feature: Feature) => {
+export const createFeatureRow = (feature: Feature, parentId: string) => {
   const element = document.createElement(ROW_TAG_NAME);
   element.setAttribute('id', feature.id);
   element.setAttribute('name', feature.name);
   element.setAttribute('visible', feature.visible ? 'true' : 'false');
-  element.setAttribute('editable', 'true');
   element.setAttribute('type', feature.type);
+  element.setAttribute('parentId', parentId);
   return element;
 };
 
-export const createNodeRow = (node: Node) => {
+export const createNodeRow = (node: Node, parentId: string) => {
   const element = document.createElement(ROW_TAG_NAME);
   element.setAttribute('id', node.id);
   element.setAttribute('name', node.name);
   element.setAttribute('visible', node.visible ? 'true' : 'false');
-  element.setAttribute('editable', 'true');
   element.setAttribute('type', node.type);
   element.setAttribute('node-type', node.node);
+  element.setAttribute('parentId', parentId);
   return element;
 };
 
@@ -66,5 +65,4 @@ export const updateFeatureContainer = (
   element?.setAttribute('items', JSON.stringify(feature.items));
   element?.setAttribute('name', feature.name);
   element?.setAttribute('visible', JSON.stringify(feature.visible));
-  element?.setAttribute('focused', JSON.stringify(feature.focused || '{}'));
 };

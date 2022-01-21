@@ -8,7 +8,6 @@ interface ItemBase {
   type: ItemType;
   name: string;
   visible: boolean;
-  focused: Focused;
 }
 export interface Node extends ItemBase {
   type: 'NODE';
