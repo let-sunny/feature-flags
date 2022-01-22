@@ -15,6 +15,10 @@ export default class Row extends CustomElement {
     return this.getAttribute('name') || '';
   }
 
+  get type() {
+    return this.getAttribute('type') || '';
+  }
+
   constructor() {
     super(Template, Style);
   }
@@ -64,7 +68,7 @@ export default class Row extends CustomElement {
       }
     };
     const editName = ({ id }: Events['editFeatureName']) => {
-      if (id !== this.id) return;
+      if (id !== this.id || this.type !== 'FEATURE') return;
       requestAnimationFrame(() => {
         input.style.display = 'block';
         input.value = this.name;

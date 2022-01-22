@@ -53,17 +53,22 @@ describe(`${ROW_TAG_NAME} event handlers`, () => {
     const element = document.createElement(ROW_TAG_NAME);
     element.id = 'test-row';
     element.setAttribute('name', 'previous name');
-
     document.body.appendChild(element);
-
-    const mock = jest.fn();
-    emitter.on('renameFeature', mock);
-    emitter.emit('editFeatureName', { id: element.id });
 
     const input = element.shadowRoot?.querySelector(
       '.input'
     ) as HTMLInputElement;
     expect(input).toBeDefined();
+
+    const mock = jest.fn();
+    emitter.on('renameFeature', mock);
+    emitter.emit('editFeatureName', { id: element.id });
+
+    // only feature name is editable
+    expect(input.style.display).not.toBe('block');
+    element.setAttribute('type', 'FEATURE');
+
+    emitter.emit('editFeatureName', { id: element.id });
     expect(input.style.display).toBe('block');
     expect(input.value).toBe('previous name');
     input.value = 'new name';
