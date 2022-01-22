@@ -1,0 +1,17 @@
+# .github/workflows/tests.yml
+name: 'Tests'
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Run test with jest
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: npm install
+      - name: Run test
+        run: npm run test
