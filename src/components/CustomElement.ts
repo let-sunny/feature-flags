@@ -4,7 +4,7 @@ type ClearEventHandler = () => void;
 type EventHandlers = () => ClearEventHandler;
 export default class CustomElement extends HTMLElement {
   emitter = emitter;
-  eventHandlers: EventHandlers[] = [];
+  eventHandlers: ClearEventHandler[] = [];
   constructor(template: string, style: string) {
     super();
 
@@ -14,12 +14,11 @@ export default class CustomElement extends HTMLElement {
   }
 
   registerEventHandlers(handlers: EventHandlers[]) {
-    this.eventHandlers = this.eventHandlers.concat(handlers);
-    this.eventHandlers.forEach((handler) => handler());
+    this.eventHandlers = handlers.map((handler) => handler());
   }
 
   disconnectedCallback() {
-    this.eventHandlers.forEach((handler) => handler()());
+    this.eventHandlers.forEach((clear) => clear());
   }
 }
 
