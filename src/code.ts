@@ -22,11 +22,11 @@ figma.ui.resize(300, 425);
 
 figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
-    case 'REQUEST_UPDATE_FEATURES': {
+    case 'UPDATE_FEATURES': {
       figma.clientStorage.setAsync('features', msg.features);
       break;
     }
-    case 'REQUEST_SYNC_FEATURES': {
+    case 'SYNC_FEATURES': {
       const features = await figma.clientStorage.getAsync('features');
       const updatedFeatures = features.map((feature: any) =>
         Object.assign(feature, {
@@ -39,7 +39,7 @@ figma.ui.onmessage = async (msg) => {
       sendFeatures(updatedFeatures);
       break;
     }
-    case 'REQUEST_CHANGE_NODE_VISIBLE': {
+    case 'CHANGE_NODE_VISIBLE': {
       const { nodes, visible } = msg;
 
       const changedNodes = nodes.map((node: any) => {

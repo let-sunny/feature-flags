@@ -55,5 +55,8 @@
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
+  },
+  "dependencies": {
+    "mitt": "^3.0.0"
   }
 }
