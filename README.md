@@ -9,6 +9,12 @@
 
 **Feature Flags is a [Figma](https://figma.com/) plugin**
 
+
+## Architecture
+
+- [Architecture (English)](./ARCHITECTURE.md)
+- [아키텍처 설명 (한국어)](./ARCHITECTURE_ko.md)
+
 ## Development
 
 ```bash
